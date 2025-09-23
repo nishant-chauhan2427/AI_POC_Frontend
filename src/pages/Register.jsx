@@ -134,7 +134,7 @@ export default function Register() {
             color: 'rgb(252,165,165)',
             fontWeight: 600
           }}>
-            Backend is not reachable. Please start the server at 127.0.0.1:8000 and try again.
+            {/* Backend is not reachable. Please start the server at 127.0.0.1:8000 and try again. */}
           </div>
         )}
         <div style={styles.header}>
