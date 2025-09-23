@@ -40,7 +40,8 @@ export default function Register() {
       border: '1px solid rgba(255,255,255,0.25)',
       background: 'rgba(0,0,0,0.25)',
       color: '#fff',
-      outline: 'none'
+      outline: 'none',
+      boxSizing: 'border-box'
     },
     error: {
       color: 'rgb(252,165,165)',
