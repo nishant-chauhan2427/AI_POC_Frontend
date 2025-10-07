@@ -6,13 +6,21 @@ export default function Register() {
   const styles = {
     page: {
       minHeight: '100vh',
+      
       width: '100vw',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: 16,
       background: 'radial-gradient(1200px 600px at 10% 10%, rgba(99,102,241,0.18), transparent),\n                  radial-gradient(1200px 600px at 90% 20%, rgba(168,85,247,0.15), transparent),\n                  radial-gradient(1200px 600px at 10% 90%, rgba(59,130,246,0.12), transparent),\n                  #0b1020',
-      color: '#fff'
+      color: '#fff',
+      position: 'relative'
+    },
+    logo: {
+      position: 'absolute',
+      top: 1,
+      left: 20,
+      zIndex: 10 // Ensure logo appears above other content
     },
     card: {
       width: '100%',
@@ -77,18 +85,18 @@ export default function Register() {
   const navigate = useNavigate();
 
   // Ping backend status once on mount to inform the user if server is down
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        await getJSON("/status/");
-        if (mounted) setBackendOnline(true);
-      } catch {
-        if (mounted) setBackendOnline(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, []);
+  // useEffect(() => {
+  //   let mounted = true;
+  //   (async () => {
+  //     try {
+  //       await getJSON("/status/");
+  //       if (mounted) setBackendOnline(true);
+  //     } catch {
+  //       if (mounted) setBackendOnline(false);
+  //     }
+  //   })();
+  //   return () => { mounted = false; };
+  // }, []);
 
   async function handleRegister() {
     if (!name.trim()) {
@@ -124,8 +132,15 @@ export default function Register() {
 
   return (
     <div style={styles.page}>
+       <img 
+        src="/PRAGYAN.AI-logo-dark.svg" 
+        height={140} 
+        width={280} 
+        style={styles.logo}
+        alt="PRAGYAN.AI Logo"
+      />
       <div style={styles.card}>
-        {backendOnline && (
+        {/* {backendOnline && (
           <div style={{
             marginBottom: 12,
             padding: '10px 12px',
@@ -135,12 +150,13 @@ export default function Register() {
             color: 'rgb(252,165,165)',
             fontWeight: 600
           }}>
-            {/* Backend is not reachable. Please start the server at 127.0.0.1:8000 and try again. */}
+            Backend is not reachable. Please start the server at 127.0.0.1:8000 and try again.
           </div>
-        )}
+        )} */}
+
         <div style={styles.header}>
           <h2 style={styles.title}>🎯 Candidate Registration</h2>
-          <p style={styles.subtitle}>Please enter your full name to start your proctoring session</p>
+          <p style={styles.subtitle}>Please enter your full name and test id to start your proctoring session</p>
         </div>
 
         <div style={styles.inputWrap}>

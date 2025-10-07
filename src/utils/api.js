@@ -1,4 +1,4 @@
-export const API_BASE = "http://127.0.0.1:8000/api/v1";
+export const API_BASE = "http://127.0.0.1:8000/ai-interview/api/v1";
 
 // Fetch with timeout to avoid hanging UI when backend is down
 async function fetchWithTimeout(url, options = {}, timeoutMs = 6000) {

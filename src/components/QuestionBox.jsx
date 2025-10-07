@@ -31,8 +31,8 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
     const utterance = new SpeechSynthesisUtterance(text);
     
     // Configuration
-    utterance.lang = "en-US";
-    utterance.rate = 0.9; // Slightly slower for better comprehension
+    utterance.lang = "en";
+    utterance.rate = 1.0; // Slightly slower for better comprehension
     utterance.pitch = 1.0;
     utterance.volume = 1.0;
     
@@ -627,7 +627,7 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
                     Transcribing...
                   </span>
                 ) : (
-                  isRecording ? "⏹️ Stop" : "🎤 Answer"
+                  isRecording ? "⏹️ Done" : "🎤 Answer"
                 )}
               </button>
               <button
