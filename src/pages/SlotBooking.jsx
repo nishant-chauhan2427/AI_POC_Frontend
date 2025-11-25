@@ -85,7 +85,7 @@ export default function CandidateSlotBooking() {
         setBookingResponse(data);
         setSubmitted(true);
         
-        // Reset form after 5 seconds
+      
         setTimeout(() => {
           setFormData({ date: '', time: '', email: '' });
           setSubmitted(false);
