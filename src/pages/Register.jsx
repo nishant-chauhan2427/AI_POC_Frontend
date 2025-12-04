@@ -96,7 +96,6 @@ export default function Register() {
     setIsLoading(true);
   
     try {
-      // 🔍 1. CHECK ROLE (email validation + DB check)
       const roleResponse = await postJSON("/register/check-role/", { 
         email: email.trim(),
       });
