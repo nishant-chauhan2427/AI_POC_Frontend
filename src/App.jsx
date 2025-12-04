@@ -12,13 +12,14 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/candidatedata" element={<CandidateListingData />} />
         <Route path="/" element={<Register />} />
         <Route path="/candidatephoto" element={<CandidatePhotoCapture />} />
         <Route path="/aadhaar" element={<AadhaarCapture />} />
         <Route path="/proctoring" element={<Proctoring />} />
         <Route path="/report" element={<ReportAnalysis />} />
         <Route path="/slot" element={<CandidateSlotBooking />} />
+
+        <Route path="/candidatedata" element={<CandidateListingData />} />
       </Routes>
     </Router>
   );

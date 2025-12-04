@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { postJSON, getJSON } from "../utils/api";
+import { postJSON } from "../utils/api";
 
 export default function Register() {
   const styles = {
@@ -19,7 +19,7 @@ export default function Register() {
       position: 'absolute',
       top: 1,
       left: 20,
-      zIndex: 10 // Ensure logo appears above other content
+      zIndex: 10 
     },
     card: {
       width: '100%',
@@ -81,13 +81,11 @@ export default function Register() {
   const [testId, setTestId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [backendOnline, setBackendOnline] = useState(true);
   const navigate = useNavigate();
-
-
+  const isFormValid = name.trim() !== "" && email.trim() !== "" && testId.trim() !== "";
 
   async function handleRegister() {
-    // Basic Validation
+   
     if (!name.trim()) return setError("Please enter your name");
     if (!testId.trim()) return setError("Please enter your test ID");
     if (!email.trim()) return setError("Please enter your email ID");
@@ -119,19 +117,14 @@ export default function Register() {
         localStorage.setItem("candidate_id", regResponse.candidate_id);
         localStorage.setItem("test_id", regResponse.test_id);
         localStorage.setItem("session_id", regResponse.session_id);
-        // navigate(`/aadhaar?${regResponse.session_id}`);
         navigate(`/aadhaar?session_id=${regResponse.session_id}`);
-
-        // navigate("{regResponse.session_id}/aadhaar");
-      }
- 
+      } 
     } catch (err) {
       setError(err?.message || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   }
-  
 
   return (
     <div style={styles.page}>
@@ -145,7 +138,7 @@ export default function Register() {
       <div style={styles.card}>
         <div style={styles.header}>
           <h2 style={styles.title}> Candidate Registration</h2>
-          <p style={styles.subtitle}>Please enter your full name and test id to start your proctoring session</p>
+          <p style={styles.subtitle}>Please enter your full name, email id and test id to start your proctoring session</p>
         </div>
 
         <div style={styles.inputWrap}>
@@ -156,7 +149,7 @@ export default function Register() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your full name"
+              placeholder="Enter your full name as per aadhaar card"
               disabled={isLoading}
             />
           </label>
@@ -193,12 +186,11 @@ export default function Register() {
 
         <button 
           onClick={handleRegister} 
-          style={{ ...styles.button, ...(isLoading ? styles.buttonDisabled : null) }} 
-          disabled={isLoading}
+          style={{ ...styles.button, ...((!isFormValid ||isLoading) ? styles.buttonDisabled : {}) }} 
+          disabled={!isFormValid || isLoading}
         >
           {isLoading ? "Registering..." : " Start Session"}
         </button>
-
         <p style={styles.footer}>
           Your candidate ID will be generated automatically.
         </p>
