@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, XCircle, Edit3, Eye, SkipForward, BarChart3, User, Calendar, Clock, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getJSON } from '../utils/api';
+import CandidateInfo from "../components/CandidateInfo";;
 
 export default function ReportAnalysis() {
   const [reportData, setReportData] = useState(null);
@@ -9,16 +10,23 @@ export default function ReportAnalysis() {
   const [error, setError] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [candidateId, setCandidateId] = useState(null);
+  const [candidateName, setCandidateName] = useState(null);
   const navigate = useNavigate();
-
   useEffect(() => {
-    const storedCandidateId = localStorage.getItem('candidate_id');
-    if (storedCandidateId) {
-      setCandidateId(storedCandidateId);
-    } else {
-      setCandidateId('CAND-37bf19cd');
-    }
+    const storedCandidateId = localStorage.getItem("candidate_id");
+    const storedCandidateName = localStorage.getItem("candidate_name");
+
+    setCandidateId(storedCandidateId || "Unknown Candidate Id");
+    setCandidateName(storedCandidateName || "Unknown Candidate");
   }, []);
+  // useEffect(() => {
+  //   const storedCandidateId = localStorage.getItem('candidate_id');
+  //   if (storedCandidateId) {
+  //     setCandidateId(storedCandidateId);
+  //   } else {
+  //     setCandidateId('CAND-37bf19cd');
+  //   }
+  // }, []);
 
   // Fetch report data when candidateId is available
   useEffect(() => {
@@ -95,12 +103,8 @@ export default function ReportAnalysis() {
     glowC: { position: 'absolute', bottom: -140, left: '20%', width: 600, height: 600, borderRadius: '50%', filter: 'blur(100px)', background: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.18), transparent 60%)', pointerEvents: 'none' },
     
     header: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-      marginBottom: '32px',
-      position: 'relative',
-      zIndex: 10
+      padding: '16px 24px',
+      borderBottom: '1px solid rgba(255,255,255,0.08)'
     },
     backBtn: {
       padding: '12px',
@@ -260,6 +264,8 @@ export default function ReportAnalysis() {
       display: 'inline-flex',
       alignItems: 'center'
     },
+    headerBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+    headerTitle: { fontSize: 18, fontWeight: 800, letterSpacing: 0.4, background: 'linear-gradient(90deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' },
     badgeCorrect: {
       background: 'rgba(34,197,94,0.2)',
       color: '#4ade80'
@@ -434,7 +440,7 @@ export default function ReportAnalysis() {
       
       <div style={styles.content}>
         {/* Header */}
-        <div style={styles.header}>
+        {/* <div style={styles.header}>
           <button 
             style={styles.backBtn}
             onClick={() => navigate("/proctoring")}
@@ -444,9 +450,15 @@ export default function ReportAnalysis() {
             <ArrowLeft size={15} />
           </button>
           <h2 style={styles.title}>Test Report</h2>
+        </div> */}
+         <header style={styles.header}>
+        <div style={styles.headerBar}>
+          <h1 style={styles.headerTitle}>REX Dashboard</h1>
+          <CandidateInfo name={candidateName} id={candidateId} />
         </div>
-
-        {/* Statistics Cards */}
+      </header>
+      <h3 >Test Report</h3>
+      
         <div style={styles.grid}>
           {/* Candidate Info */}
           <div style={styles.card}>

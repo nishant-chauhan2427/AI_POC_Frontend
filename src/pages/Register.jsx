@@ -5,8 +5,7 @@ import { postJSON, getJSON } from "../utils/api";
 export default function Register() {
   const styles = {
     page: {
-      minHeight: '100vh',
-      
+      minHeight: '100vh',    
       width: '100vw',
       display: 'flex',
       alignItems: 'center',
@@ -78,57 +77,58 @@ export default function Register() {
     footer: { marginTop: 8, color: 'rgba(255,255,255,0.85)', textAlign: 'center' }
   };
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [testId, setTestId] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [backendOnline, setBackendOnline] = useState(true);
   const navigate = useNavigate();
 
-  // Ping backend status once on mount to inform the user if server is down
-  // useEffect(() => {
-  //   let mounted = true;
-  //   (async () => {
-  //     try {
-  //       await getJSON("/status/");
-  //       if (mounted) setBackendOnline(true);
-  //     } catch {
-  //       if (mounted) setBackendOnline(false);
-  //     }
-  //   })();
-  //   return () => { mounted = false; };
-  // }, []);
+
 
   async function handleRegister() {
-    if (!name.trim()) {
-      setError("Please enter your name");
-      return;
-    }
-    if (!testId.trim()) {
-      setError("Please enter your test ID");
-      return;
-    }
+    // Basic Validation
+    if (!name.trim()) return setError("Please enter your name");
+    if (!testId.trim()) return setError("Please enter your test ID");
+    if (!email.trim()) return setError("Please enter your email ID");
+  
     setError("");
     setIsLoading(true);
+  
     try {
-      const data = await postJSON("/register/", { 
-        name: name.trim(), 
-        test_id: testId.trim() 
+      // 🔍 1. CHECK ROLE (email validation + DB check)
+      const roleResponse = await postJSON("/register/check-role/", { 
+        email: email.trim(),
       });
-      localStorage.setItem("candidate_name", data.name);
-      localStorage.setItem("candidate_id", data.candidate_id);
-      localStorage.setItem("test_id", data.test_id || testId.trim());
-      navigate("/proctoring");
+      
+      if (roleResponse?.status !== "success") {
+        throw new Error(roleResponse?.message || "Invalid email");
+      }
+
+      if(roleResponse?.role=="admin")
+      {
+        navigate("/candidatedata")
+      }
+      else
+      {
+        const regResponse = await postJSON("/register/", { 
+          name: name.trim(),
+          test_id: testId.trim(),
+          email:email.trim()
+        });
+        localStorage.setItem("candidate_name", regResponse.name);
+        localStorage.setItem("candidate_id", regResponse.candidate_id);
+        localStorage.setItem("test_id", regResponse.test_id);
+        navigate("/aadhaar");
+      }
+ 
     } catch (err) {
-      setError(err.message || "Registration failed. Please try again.");
+      setError(err?.message || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   }
-  // const handleKeyPress = (e) => {
-  //   if (e.key === 'Enter' && !isLoading) {
-  //     handleRegister();
-  //   }
-  // }
+  
 
   return (
     <div style={styles.page}>
@@ -140,22 +140,8 @@ export default function Register() {
         alt="PRAGYAN.AI Logo"
       />
       <div style={styles.card}>
-        {/* {backendOnline && (
-          <div style={{
-            marginBottom: 12,
-            padding: '10px 12px',
-            borderRadius: 10,
-            background: 'rgba(239,68,68,0.12)',
-            border: '1px solid rgba(248,113,113,0.35)',
-            color: 'rgb(252,165,165)',
-            fontWeight: 600
-          }}>
-            Backend is not reachable. Please start the server at 127.0.0.1:8000 and try again.
-          </div>
-        )} */}
-
         <div style={styles.header}>
-          <h2 style={styles.title}>🎯 Candidate Registration</h2>
+          <h2 style={styles.title}> Candidate Registration</h2>
           <p style={styles.subtitle}>Please enter your full name and test id to start your proctoring session</p>
         </div>
 
@@ -168,6 +154,19 @@ export default function Register() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your full name"
+              disabled={isLoading}
+            />
+          </label>
+        </div>
+        <div style={styles.inputWrap}>
+          <label>
+            <span style={styles.label}>Enter Email</span>
+            <input
+              style={styles.input}
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email id "
               disabled={isLoading}
             />
           </label>
@@ -194,7 +193,7 @@ export default function Register() {
           style={{ ...styles.button, ...(isLoading ? styles.buttonDisabled : null) }} 
           disabled={isLoading}
         >
-          {isLoading ? "Registering..." : "🚀 Start Session"}
+          {isLoading ? "Registering..." : " Start Session"}
         </button>
 
         <p style={styles.footer}>

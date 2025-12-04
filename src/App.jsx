@@ -3,12 +3,18 @@ import Register from "./pages/Register";
 import Proctoring from "./pages/Proctoring";
 import ReportAnalysis from "./pages/ReportAnalysis";
 import CandidateSlotBooking from "./pages/SlotBooking"
+import AadhaarCapture from "./pages/adharcard.jsx";
+import CandidatePhotoCapture from "./pages/candidateCapture.jsx";
+import CandidateDataTable from "./pages/candidatelisting.jsx";
 
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/candidatedata" element={<CandidateDataTable />} />
         <Route path="/" element={<Register />} />
+        <Route path="/candidatephoto" element={<CandidatePhotoCapture />} />
+        <Route path="/aadhaar" element={<AadhaarCapture />} />
         <Route path="/proctoring" element={<Proctoring />} />
         <Route path="/report" element={<ReportAnalysis />} />
         <Route path="/slot" element={<CandidateSlotBooking />} />
