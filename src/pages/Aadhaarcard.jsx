@@ -2,8 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, X, CheckCircle, RotateCw } from "lucide-react";
 import  {postForm} from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
+
 
 export default function AadhaarCapture() {
+
   const styles = {
     page: {
       minHeight: '100vh',
@@ -273,6 +276,11 @@ export default function AadhaarCapture() {
       marginTop: 12
     }
   };
+  
+  const [searchParams] = useSearchParams();
+  const sessionid = searchParams.get("session_id");
+
+  console.log("Session ID from URL:", sessionid);
 
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -370,7 +378,9 @@ export default function AadhaarCapture() {
       setExtractedData(data.extracted_fields);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-      navigate("/candidatephoto");
+      // id=localStorage.getItem("session_id");
+      navigate(`/candidatephoto?session_id=${localStorage.getItem("session_id")}`);
+      // navigate("/candidatephoto");
     } catch (err) {
       setError(err.message || "Failed to extract data. Please try again.");
     } finally {

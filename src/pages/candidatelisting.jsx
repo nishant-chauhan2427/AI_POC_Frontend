@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getJSON } from "../utils/api";
 
-export default function CandidateTable() {
+export default function CandidateListingData() {
   const [currentPage, setCurrentPage] = useState(1);
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState({ type: null, url: null, title: '' });
-  const itemsPerPage = 6;
+  const itemsPerPage = 10;
 
   useEffect(() => {
     async function fetchCandidates() {

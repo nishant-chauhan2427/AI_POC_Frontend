@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, XCircle, Edit3, Eye, SkipForward, BarChart3, User, Calendar, Clock, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getJSON } from '../utils/api';
-import CandidateInfo from "../components/CandidateInfo";;
+import CandidateInfo from "../components/CandidateInfo";
+import { useSearchParams } from "react-router-dom";;
 
 export default function ReportAnalysis() {
+
+  const [searchParams] = useSearchParams();
+  const session_id = searchParams.get("session_id");
+  console.log("Session ID from URL:", session_id);
+
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

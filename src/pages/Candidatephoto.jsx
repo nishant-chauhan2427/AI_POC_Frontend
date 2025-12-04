@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, X, CheckCircle, RotateCw } from "lucide-react";
 import  {postForm} from "../utils/api";
 import { useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 export default function CandidatePhotoCapture() {
   const styles = {
@@ -256,7 +257,9 @@ export default function CandidatePhotoCapture() {
       lineHeight: 1.6
     }
   };
-
+  const [searchParams] = useSearchParams();
+  const session_id = searchParams.get("session_id");
+  console.log("Session ID from URL:", session_id);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [showModal, setShowModal] = useState(false);
@@ -409,7 +412,8 @@ export default function CandidatePhotoCapture() {
             const data = await postForm("/aadhaarcard/upload-candidate-image", formData);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
-            navigate("/proctoring");
+            navigate(`/proctoring?session_id=${localStorage.getItem("session_id")}`);
+            // navigate("/proctoring");
           } catch (err) {
             setError(err.message || "Failed to upload photo. Please try again.");
             setIsLoading(false);

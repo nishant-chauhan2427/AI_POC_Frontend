@@ -118,7 +118,11 @@ export default function Register() {
         localStorage.setItem("candidate_name", regResponse.name);
         localStorage.setItem("candidate_id", regResponse.candidate_id);
         localStorage.setItem("test_id", regResponse.test_id);
-        navigate("/aadhaar");
+        localStorage.setItem("session_id", regResponse.session_id);
+        // navigate(`/aadhaar?${regResponse.session_id}`);
+        navigate(`/aadhaar?session_id=${regResponse.session_id}`);
+
+        // navigate("{regResponse.session_id}/aadhaar");
       }
  
     } catch (err) {

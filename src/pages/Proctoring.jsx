@@ -7,9 +7,9 @@ import CandidateInfo from "../components/CandidateInfo";
 import { useNavigate } from "react-router-dom";
 import useTabViolationDetection from "../hooks/useTabViolationDetection";
 import { postJSON, postForm, API_BASE } from "../utils/api";
+import { useSearchParams } from "react-router-dom";
 
 export default function Proctoring() {
-  // Inline styles for UI panels and overlays (replacing Tailwind utility classes)
   const [isNarrow, setIsNarrow] = useState(typeof window !== 'undefined' ? window.innerWidth < 900 : false);
   
   useEffect(() => {
@@ -151,7 +151,8 @@ export default function Proctoring() {
 
     }
   };
-
+  const [searchParams] = useSearchParams();
+  const session_id = searchParams.get("session_id");
   // New state for API-fetched questions
   const [questions, setQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(true);
@@ -326,7 +327,7 @@ export default function Proctoring() {
 
   async function refetchReport() {
     try {
-      navigate("/report")
+      navigate(`/report?session_id=${localStorage.getItem("session_id")}`);
     } catch (err) {
       alert(err.message || 'Failed to get report');
     }
