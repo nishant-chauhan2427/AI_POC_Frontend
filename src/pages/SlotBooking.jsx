@@ -1,12 +1,18 @@
 import { useState } from 'react';
-import { Calendar, Clock, Mail, CheckCircle, AlertCircle } from 'lucide-react';
-import { postJSON, postForm, API_BASE } from "../utils/api";
+import { Calendar, Clock, Mail, SquareUser,CheckCircle, AlertCircle } from 'lucide-react';
+import { postJSON } from "../utils/api";
+import { useSearchParams } from 'react-router-dom';
 
 export default function CandidateSlotBooking() {
+
+  const [searchParams] = useSearchParams(); // Add this line
+  const jobdescriptionId = searchParams.get('id');
+
   const [formData, setFormData] = useState({
     date: '',
     time: '',
-    email: ''
+    email: '',
+    name:''
   });
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
@@ -15,24 +21,44 @@ export default function CandidateSlotBooking() {
 
   const validateForm = () => {
     const newErrors = {};
-    
+  
     if (!formData.date) {
       newErrors.date = 'Date is required';
     }
-    
+  
     if (!formData.time) {
       newErrors.time = 'Time is required';
     }
-    
+  
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
     }
-    
+  
+    // Time must be greater than present time (only if date is today)
+    // Time must be greater than present time only if date is today
+if (formData.date && formData.time) {
+  const selectedDate = new Date(formData.date);
+  const todayDate = new Date();
+
+  const [hours, minutes] = formData.time.split(":").map(Number);
+
+  const selectedDateTime = new Date(formData.date);
+  selectedDateTime.setHours(hours, minutes, 0, 0);
+
+  if (
+    selectedDate.toDateString() === todayDate.toDateString() && 
+    selectedDateTime <= todayDate
+  ) {
+    newErrors.time = "Time must be greater than the present time";
+  }
+}
+
+  
     return newErrors;
   };
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -59,170 +85,263 @@ export default function CandidateSlotBooking() {
 
     setLoading(true);
     setErrors({});
-
+    const slotSubmitData = {
+      ...formData,
+     jd_id: jobdescriptionId // Add the ID from URL
+    };
     try {
-      const response = await fetch(`${API_BASE}/slotbooking/book-slot`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      // Always try to parse JSON response, even for errors
-      let data;
-      try {
-        data = await response.json();
-      } catch (jsonError) {
-        console.error('Failed to parse JSON response:', jsonError);
-        data = { detail: 'Invalid response from server' };
-      }
-
-      console.log('Response status:', response.status);
-      console.log('Response data:', data);
-
-      if (response.ok) {
-        setBookingResponse(data);
-        setSubmitted(true);
-        
+      const data = await postJSON('/slotbooking/book-slot', slotSubmitData);
+      setBookingResponse(data);
+      setSubmitted(true);
       
-        setTimeout(() => {
-          setFormData({ date: '', time: '', email: '' });
-          setSubmitted(false);
-          setBookingResponse(null);
-        }, 5000);
-      } else {
-        // Enhanced error handling
-        console.log('Error response:', data);
-        
-        if (response.status === 409) {
-          // Conflict - slot already booked or candidate has existing booking
-          const errorMessage = data.detail || data.message || 'Conflict occurred';
-          setErrors({ general: errorMessage });
-        } else if (response.status === 422) {
-          // Validation errors
-          if (data.detail && Array.isArray(data.detail)) {
-            const fieldErrors = {};
-            data.detail.forEach(error => {
-              const field = error.loc[error.loc.length - 1];
-              fieldErrors[field] = error.msg;
-            });
-            setErrors(fieldErrors);
-          } else {
-            setErrors({ general: data.detail || 'Validation error occurred' });
-          }
-        } else if (response.status === 503) {
-          // Service unavailable
-          setErrors({ general: data.detail || 'Service temporarily unavailable' });
-        } else {
-          // Other errors
-          const errorMessage = data.detail || data.message || `Server error (${response.status})`;
-          setErrors({ general: errorMessage });
-        }
-      }
-    } catch (error) {
-      console.error('Network error:', error);
+      setTimeout(() => {
+        setFormData({ date: '', time: '', email: '' });
+        setSubmitted(false);
+        setBookingResponse(null);
+      }, 5000);
+    } catch (err) {
       setErrors({ 
-        general: 'Network error. Please check if the server is running and try again.' 
+        general: err?.message || 'Failed to book slot. Please try again.' 
       });
     } finally {
       setLoading(false);
     }
   };
 
+  if (!jobdescriptionId) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <div style={styles.errorBox}>
+            <div style={styles.errorContent}>
+              <AlertCircle style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
+              <span style={styles.errorText}>No Job Description ID found. Please use a valid interview link.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const today = new Date().toISOString().split('T')[0];
 
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      background: 'linear-gradient(to bottom right, #f0f9ff, #e0e7ff)',
+      padding: '1rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
+    card: {
+      maxWidth: '28rem',
+      width: '100%',
+      background: 'white',
+      borderRadius: '0.5rem',
+      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+      padding: '1.5rem',
+      boxSizing: 'border-box',
+      overflow: 'hidden'
+    },
+    title: {
+      fontSize: '1.875rem',
+      fontWeight: 'bold',
+      color: '#1f2937',
+      marginBottom: '0.5rem'
+    },
+    subtitle: {
+      color: '#4b5563',
+      marginBottom: '1.5rem'
+    },
+    successBox: {
+      background: '#f0fdf4',
+      border: '1px solid #bbf7d0',
+      borderRadius: '0.5rem',
+      padding: '1.5rem',
+      textAlign: 'center'
+    },
+    successTitle: {
+      fontSize: '1.125rem',
+      fontWeight: '600',
+      color: '#166534',
+      marginBottom: '0.5rem'
+    },
+    detailsContainer: {
+      marginTop: '0.5rem',
+      marginBottom: '1rem'
+    },
+    detailRow: {
+      fontSize: '0.875rem',
+      color: '#374151',
+      margin: '0.5rem 0'
+    },
+    testLinkText: {
+      color: '#2563eb',
+      textDecoration: 'none',
+      marginLeft: '0.25rem'
+    },
+    testLinkHover: {
+      textDecoration: 'underline'
+    },
+    successNote: {
+      fontSize: '0.75rem',
+      color: '#9ca3af',
+      marginTop: '1rem'
+    },
+    formSpace: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '1.25rem'
+    },
+    errorBox: {
+      background: '#fef2f2',
+      border: '1px solid #fecaca',
+      borderRadius: '0.5rem',
+      padding: '1rem'
+    },
+    errorContent: {
+      display: 'flex',
+      alignItems: 'center',
+      color: '#b91c1c'
+    },
+    errorText: {
+      fontSize: '0.875rem',
+      fontWeight: '500'
+    },
+    fieldGroup: {
+      display: 'flex',
+      flexDirection: 'column'
+    },
+    label: {
+      display: 'flex',
+      alignItems: 'center',
+      color: '#374151',
+      fontWeight: '600',
+      marginBottom: '0.5rem'
+    },
+    labelIcon: {
+      width: '1rem',
+      height: '1rem',
+      marginRight: '0.5rem',
+      color: '#4f46e5'
+    },
+    input: {
+      width: '100%',
+      padding: '0.5rem 1rem',
+      border: '1px solid #d1d5db',
+      borderRadius: '0.5rem',
+      fontSize: '1rem',
+      outline: 'none',
+      transition: 'all 0.2s',
+      boxSizing: 'border-box'
+    },
+    inputError: {
+      borderColor: '#ef4444'
+    },
+    inputDisabled: {
+      opacity: '0.5',
+      cursor: 'not-allowed'
+    },
+    fieldError: {
+      display: 'flex',
+      alignItems: 'center',
+      marginTop: '0.25rem',
+      color: '#dc2626',
+      fontSize: '0.875rem'
+    },
+    fieldErrorIcon: {
+      width: '1rem',
+      height: '1rem',
+      marginRight: '0.25rem'
+    },
+    button: {
+      width: '100%',
+      fontWeight: '600',
+      padding: '0.5rem 1rem',
+      borderRadius: '0.5rem',
+      border: 'none',
+      cursor: 'pointer',
+      transition: 'all 0.2s',
+      fontSize: '1rem',
+      color: 'white',
+      boxSizing: 'border-box'
+    },
+    buttonLoading: {
+      background: '#9ca3af',
+      cursor: 'not-allowed'
+    },
+    buttonActive: {
+      background: '#4f46e5'
+    },
+    buttonHover: {
+      background: '#4338ca'
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4 sm:p-8">
-      <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6 sm:p-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Schedule Your Slot</h1>
-        <p className="text-gray-600 mb-6">Select your preferred date and time for the interview</p>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h1 style={styles.title}>Schedule Your Slot</h1>
+        <p style={styles.subtitle}>Select your preferred date and time for the interview</p>
 
         {submitted && bookingResponse ? (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-            <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-green-800 mb-2">Slot Booked Successfully!</h3>
-            <div className="space-y-2 text-sm text-gray-700">
-              <p><strong>Booking ID:</strong> {bookingResponse.booking_id}</p>
-              <p><strong>Date:</strong> {new Date(bookingResponse.date).toLocaleDateString()}</p>
-              <p><strong>Time:</strong> {bookingResponse.time}</p>
-              <p><strong>Email:</strong> {bookingResponse.email}</p>
-              <p><strong>Test Link:</strong> 
-                <a 
-                  href={bookingResponse.test_link} 
-                  className="text-blue-600 hover:underline ml-1"
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                >
-                  Click here
-                </a>
-              </p>
+          <div style={styles.successBox}>
+            <CheckCircle style={{ width: '3rem', height: '3rem', color: '#16a34a', margin: '0 auto 0.75rem' }} />
+            <h3 style={styles.successTitle}>Slot Booked Successfully!</h3>
+            <div style={styles.detailsContainer}>
+              <p style={styles.detailRow}><strong>Booking ID:</strong> {bookingResponse.booking_id}</p>
+              <p style={styles.detailRow}><strong>Name:</strong> {bookingResponse.name}</p>
+              <p style={styles.detailRow}><strong>Email:</strong> {bookingResponse.email}</p>
+              <p style={styles.detailRow}><strong>Date:</strong> {new Date(bookingResponse.date).toLocaleDateString()}</p>
+              <p style={styles.detailRow}><strong>Time:</strong> {bookingResponse.time}</p>
+              
             </div>
-            <p className="text-xs text-gray-500 mt-4">
+            <p style={styles.successNote}>
               Please save your test link. The test will be available 5 minutes before your scheduled time.
             </p>
           </div>
         ) : (
-          <div className="space-y-5">
+          <div style={styles.formSpace}>
             {errors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center text-red-800">
-                  <AlertCircle className="w-5 h-5 mr-2" />
-                  <span className="text-sm font-medium">{errors.general}</span>
+              <div style={styles.errorBox}>
+                <div style={styles.errorContent}>
+                  <AlertCircle style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
+                  <span style={styles.errorText}>{errors.general}</span>
                 </div>
               </div>
-            )}
-
-            <div>
-              <label className="flex items-center text-gray-700 font-semibold mb-2">
-                <Calendar className="w-4 h-4 mr-2 text-indigo-600" />
-                Select Date
+            )}          
+          
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>
+                <SquareUser style={styles.labelIcon} />
+                Candidate Name
               </label>
               <input
-                type="date"
-                name="date"
-                value={formData.date}
+                type="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
-                min={today}
+                placeholder="candidate name"
                 disabled={loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  errors.date ? 'border-red-500' : 'border-gray-300'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                style={{
+                  ...styles.input,
+                  ...(errors.email && styles.inputError),
+                  ...(loading && styles.inputDisabled)
+                }}
               />
-              {errors.date && (
-                <div className="flex items-center mt-1 text-red-600 text-sm">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.date}
+              {errors.name && (
+                <div style={styles.fieldError}>
+                  <AlertCircle style={styles.fieldErrorIcon} />
+                  {errors.name}
                 </div>
               )}
             </div>
 
-            <div>
-              <label className="flex items-center text-gray-700 font-semibold mb-2">
-                <Clock className="w-4 h-4 mr-2 text-indigo-600" />
-                Select Time
-              </label>
-              <input
-                type="time"
-                name="time"
-                value={formData.time}
-                onChange={handleChange}
-                disabled={loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  errors.time ? 'border-red-500' : 'border-gray-300'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-              />
-              {errors.time && (
-                <div className="flex items-center mt-1 text-red-600 text-sm">
-                  <AlertCircle className="w-4 h-4 mr-1" />
-                  {errors.time}
-                </div>
-              )}
-            </div>
 
-            <div>
-              <label className="flex items-center text-gray-700 font-semibold mb-2">
-                <Mail className="w-4 h-4 mr-2 text-indigo-600" />
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>
+                <Mail style={styles.labelIcon} />
                 Email Address
               </label>
               <input
@@ -232,14 +351,67 @@ export default function CandidateSlotBooking() {
                 onChange={handleChange}
                 placeholder="candidate@example.com"
                 disabled={loading}
-                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
-                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                style={{
+                  ...styles.input,
+                  ...(errors.email && styles.inputError),
+                  ...(loading && styles.inputDisabled)
+                }}
               />
               {errors.email && (
-                <div className="flex items-center mt-1 text-red-600 text-sm">
-                  <AlertCircle className="w-4 h-4 mr-1" />
+                <div style={styles.fieldError}>
+                  <AlertCircle style={styles.fieldErrorIcon} />
                   {errors.email}
+                </div>
+              )}
+            </div>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>
+                <Calendar style={styles.labelIcon} />
+                Select Date
+              </label>
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                min={today}
+                disabled={loading}
+                style={{
+                  ...styles.input,
+                  ...(errors.date && styles.inputError),
+                  ...(loading && styles.inputDisabled)
+                }}
+              />
+              {errors.date && (
+                <div style={styles.fieldError}>
+                  <AlertCircle style={styles.fieldErrorIcon} />
+                  {errors.date}
+                </div>
+              )}
+            </div>
+
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>
+                <Clock style={styles.labelIcon} />
+                Select Time
+              </label>
+              <input
+                type="time"
+                name="time"
+                value={formData.time}
+                onChange={handleChange}
+                disabled={loading}
+                style={{
+                  ...styles.input,
+                  ...(errors.time && styles.inputError),
+                  ...(loading && styles.inputDisabled)
+                }}
+              />
+              {errors.time && (
+                <div style={styles.fieldError}>
+                  <AlertCircle style={styles.fieldErrorIcon} />
+                  {errors.time}
                 </div>
               )}
             </div>
@@ -247,11 +419,14 @@ export default function CandidateSlotBooking() {
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className={`w-full font-semibold py-2 px-4 rounded-lg transition duration-200 transform ${
-                loading 
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-indigo-600 hover:bg-indigo-700 hover:scale-105 active:scale-95'
-              } text-white`}
+              style={{
+                ...styles.button,
+                ...(loading ? styles.buttonLoading : styles.buttonActive)
+              }}
+              onMouseEnter={(e) => !loading && (e.target.style.background = '#4338ca')}
+              onMouseLeave={(e) => !loading && (e.target.style.background = '#4f46e5')}
+              onMouseDown={(e) => !loading && (e.target.style.transform = 'scale(0.95)')}
+              onMouseUp={(e) => !loading && (e.target.style.transform = 'scale(1)')}
             >
               {loading ? 'Booking...' : 'Confirm Booking'}
             </button>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom"; // Added useParams
 import { postJSON } from "../utils/api";
 
 export default function Register() {
@@ -50,6 +50,19 @@ export default function Register() {
       outline: 'none',
       boxSizing: 'border-box'
     },
+    autoFillInput: { // New style for auto-filled field
+      ...{
+        width: '100%',
+        padding: '12px 14px',
+        borderRadius: 10,
+        border: '2px solid rgba(34, 197, 94, 0.5)',
+        background: 'rgba(34, 197, 94, 0.1)',
+        color: '#22c55e',
+        fontWeight: 600,
+        outline: 'none',
+        boxSizing: 'border-box'
+      }
+    },
     error: {
       color: 'rgb(252,165,165)',
       background: 'rgba(239,68,68,0.12)',
@@ -74,25 +87,69 @@ export default function Register() {
       opacity: 0.7,
       cursor: 'not-allowed'
     },
-    footer: { marginTop: 8, color: 'rgba(255,255,255,0.85)', textAlign: 'center' }
+    footer: { marginTop: 8, color: 'rgba(255,255,255,0.85)', textAlign: 'center' },
+    infoText: { 
+      background: 'rgba(34, 197, 94, 0.15)', 
+      border: '1px solid rgba(34, 197, 94, 0.3)', 
+      borderRadius: 8, 
+      padding: 12, 
+      marginBottom: 16,
+      color: '#22c55e',
+      fontWeight: 500
+    }
   };
+
+  const recaptcha_token = import.meta.env.VITE_RECAPTCHA_KEY;
+  console.log(recaptcha_token);
+  
+  // Extract URL parameters
+  const { id, slotid } = useParams();
+  
+  const cleanTestId = id?.replace("id=", "") || "";
+  const cleanSlotId = slotid?.replace("slotid=", "") || "";
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [testId, setTestId] = useState("");
+  const [testId, setTestId] = useState(cleanTestId || "");
+  const [slotId, setSlotId] = useState(cleanSlotId || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!window.grecaptcha) {
+      const script = document.createElement("script");
+      script.src = `https://www.google.com/recaptcha/api.js?render=${recaptcha_token}`;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, [recaptcha_token]);
+
   const isFormValid = name.trim() !== "" && email.trim() !== "" && testId.trim() !== "";
 
   async function handleRegister() {
-   
     if (!name.trim()) return setError("Please enter your name");
     if (!testId.trim()) return setError("Please enter your test ID");
     if (!email.trim()) return setError("Please enter your email ID");
   
     setError("");
     setIsLoading(true);
-  
+
+    const executeRecaptcha = async () => {
+      return new Promise((resolve, reject) => {
+        if (window.grecaptcha) {
+          window.grecaptcha.ready(() => {
+            window.grecaptcha
+              .execute(recaptcha_token, { action: "submit" })
+              .then(token => resolve(token))
+              .catch(err => reject(err));
+          });
+        } else {
+          reject("reCAPTCHA not ready");
+        }
+      });
+    };
+    
     try {
       const roleResponse = await postJSON("/register/check-role/", { 
         email: email.trim(),
@@ -102,21 +159,25 @@ export default function Register() {
         throw new Error(roleResponse?.message || "Invalid email");
       }
 
-      if(roleResponse?.role=="admin")
-      {
-        navigate("/candidatedata")
-      }
-      else
-      {
+      if(roleResponse?.role === "admin") {
+        navigate("/candidatedata");
+      } else {
+        const token = await executeRecaptcha();
+
         const regResponse = await postJSON("/register/", { 
           name: name.trim(),
           test_id: testId.trim(),
-          email:email.trim()
+          email: email.trim(),
+          recaptcha_token: token,
+          slot_id: slotId // Added slot_id to backend payload
         });
+        
         localStorage.setItem("candidate_name", regResponse.name);
         localStorage.setItem("candidate_id", regResponse.candidate_id);
         localStorage.setItem("test_id", regResponse.test_id);
         localStorage.setItem("session_id", regResponse.session_id);
+        localStorage.setItem("slot_id", slotId); // Store slot_id
+        
         navigate(`/aadhaar?session_id=${regResponse.session_id}`);
       } 
     } catch (err) {
@@ -128,7 +189,7 @@ export default function Register() {
 
   return (
     <div style={styles.page}>
-       <img 
+      <img 
         src="/PRAGYAN.AI-logo-dark.svg" 
         height={140} 
         width={280} 
@@ -137,9 +198,18 @@ export default function Register() {
       />
       <div style={styles.card}>
         <div style={styles.header}>
-          <h2 style={styles.title}> Candidate Registration</h2>
-          <p style={styles.subtitle}>Please enter your full name, email id and test id to start your proctoring session</p>
+          <h2 style={styles.title}>Candidate Registration</h2>
+          <p style={styles.subtitle}>
+             Please enter your full name, email id to start your proctoring session
+          </p>
         </div>
+
+        {/* Show Test ID info when auto-filled */}
+        {/* {testId && (
+          <div style={styles.infoText}>
+            ✅ Test ID: <strong>{testId}</strong> {slotId && `| Slot ID: ${slotId}`}
+          </div>
+        )} */}
 
         <div style={styles.inputWrap}>
           <label>
@@ -154,45 +224,51 @@ export default function Register() {
             />
           </label>
         </div>
+
         <div style={styles.inputWrap}>
           <label>
             <span style={styles.label}>Enter Email</span>
             <input
               style={styles.input}
-              type="text"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email id "
+              placeholder="Enter your email id"
               disabled={isLoading}
             />
           </label>
         </div>
-        <div style={styles.inputWrap}>
-          <label>
-            <span style={styles.label}>Test ID</span>
-            <input
-              style={styles.input}
-              type="text"
-              value={testId}
-              onChange={(e) => setTestId(e.target.value)}
-              placeholder="Enter your test ID"
-              disabled={isLoading}
-              data-testid="test-id-input"
-            />
-          </label>
-        </div>
+
+        {/* Hide Test ID input field completely when auto-filled */}
+        {!testId && (
+          <div style={styles.inputWrap}>
+            <label>
+              <span style={styles.label}>Test ID</span>
+              <input
+                style={styles.input}
+                type="text"
+                value={testId}
+                onChange={(e) => setTestId(e.target.value)}
+                placeholder="Enter your test ID"
+                disabled={isLoading}
+                data-testid="test-id-input"
+              />
+            </label>
+          </div>
+        )}
 
         {error && <p style={styles.error}>{error}</p>}
 
         <button 
           onClick={handleRegister} 
-          style={{ ...styles.button, ...((!isFormValid ||isLoading) ? styles.buttonDisabled : {}) }} 
+          style={{ ...styles.button, ...((!isFormValid || isLoading) ? styles.buttonDisabled : {}) }} 
           disabled={!isFormValid || isLoading}
         >
-          {isLoading ? "Registering..." : " Start Session"}
+          {isLoading ? "Registering..." : "Start Session"}
         </button>
+        
         <p style={styles.footer}>
-          Your candidate ID will be generated automatically.
+         Your candidate ID will be generated automatically.
         </p>
       </div>
     </div>
