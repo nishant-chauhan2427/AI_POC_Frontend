@@ -105,8 +105,8 @@ export default function Register() {
   // Extract URL parameters
   const { testid, bookingid } = useParams();
   
-  const cleanTestId = testid?.replace("testid=", "") || "";
-  const cleanBookingId = bookingid?.replace("bookingid=", "") || "";
+  const cleanTestId = testid?.replace("testid:", "") || "";
+  const cleanBookingId = bookingid?.replace("bookingid:", "") || "";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
