@@ -13,7 +13,7 @@ function App() {
     <Router>
       <Routes>
         {/* <Route path="/id=:id/slotid=:slotid" element={<Register />} /> */}
-        <Route path="/:id/:slotid" element={<Register />} />
+        <Route path="/:testid/:bookingid" element={<Register />} />
         <Route path="/" element={<Register />} />
         <Route path="/candidatephoto" element={<CandidatePhotoCapture />} />
         <Route path="/aadhaar" element={<AadhaarCapture />} />

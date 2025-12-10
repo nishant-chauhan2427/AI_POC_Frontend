@@ -103,15 +103,15 @@ export default function Register() {
   console.log(recaptcha_token);
   
   // Extract URL parameters
-  const { id, slotid } = useParams();
+  const { testid, bookingid } = useParams();
   
-  const cleanTestId = id?.replace("id=", "") || "";
-  const cleanSlotId = slotid?.replace("slotid=", "") || "";
+  const cleanTestId = testid?.replace("testid=", "") || "";
+  const cleanBookingId = bookingid?.replace("bookingid=", "") || "";
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [testId, setTestId] = useState(cleanTestId || "");
-  const [slotId, setSlotId] = useState(cleanSlotId || "");
+  const [bookingId, setBookingId] = useState(cleanBookingId || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -169,14 +169,14 @@ export default function Register() {
           test_id: testId.trim(),
           email: email.trim(),
           recaptcha_token: token,
-          slot_id: slotId // Added slot_id to backend payload
+          slot_id: bookingId // Added slot_id to backend payload
         });
         
         localStorage.setItem("candidate_name", regResponse.name);
         localStorage.setItem("candidate_id", regResponse.candidate_id);
         localStorage.setItem("test_id", regResponse.test_id);
         localStorage.setItem("session_id", regResponse.session_id);
-        localStorage.setItem("slot_id", slotId); // Store slot_id
+        localStorage.setItem("bookingId", bookingId); // Store slot_id
         
         navigate(`/aadhaar?session_id=${regResponse.session_id}`);
       } 
