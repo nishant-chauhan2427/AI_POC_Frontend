@@ -379,6 +379,8 @@ export default function AadhaarCapture() {
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
       // id=localStorage.getItem("session_id");
+      localStorage.setItem("isaadhaarcard", "true");
+      console.log(localStorage.getItem("session_id"),"session_id data")
       navigate(`/candidatephoto?session_id=${localStorage.getItem("session_id")}`);
       // navigate("/candidatephoto");
     } catch (err) {

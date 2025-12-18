@@ -7,6 +7,7 @@ export default function CandidateSlotBooking() {
 
   const [searchParams] = useSearchParams(); // Add this line
   const jobdescriptionId = searchParams.get('id');
+  const OwnerId = searchParams.get('_id');
 
   const [formData, setFormData] = useState({
     date: '',
@@ -87,7 +88,8 @@ if (formData.date && formData.time) {
     setErrors({});
     const slotSubmitData = {
       ...formData,
-     jd_id: jobdescriptionId // Add the ID from URL
+     jd_id: jobdescriptionId,
+     owner_id:OwnerId
     };
     try {
       const data = await postJSON('/slotbooking/book-slot', slotSubmitData);
@@ -108,20 +110,6 @@ if (formData.date && formData.time) {
     }
   };
 
-  if (!jobdescriptionId) {
-    return (
-      <div style={styles.container}>
-        <div style={styles.card}>
-          <div style={styles.errorBox}>
-            <div style={styles.errorContent}>
-              <AlertCircle style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
-              <span style={styles.errorText}>No Job Description ID found. Please use a valid interview link.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const today = new Date().toISOString().split('T')[0];
 
@@ -279,6 +267,35 @@ if (formData.date && formData.time) {
     }
   };
 
+  if (!jobdescriptionId) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <div style={styles.errorBox}>
+            <div style={styles.errorContent}>
+              <AlertCircle style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
+              <span style={styles.errorText}>No Job Description ID found. Please use a valid interview link.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!OwnerId) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <div style={styles.errorBox}>
+            <div style={styles.errorContent}>
+              <AlertCircle style={{ width: '1.25rem', height: '1.25rem', marginRight: '0.5rem' }} />
+              <span style={styles.errorText}>No Job Slot ID found. Please use a valid interview link.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   return (
     <div style={styles.container}>
       <div style={styles.card}>
@@ -298,7 +315,7 @@ if (formData.date && formData.time) {
               
             </div>
             <p style={styles.successNote}>
-              Please save your test link. The test will be available 5 minutes before your scheduled time.
+              Please save your test link. The test will be available 10 minutes before your scheduled time.
             </p>
           </div>
         ) : (

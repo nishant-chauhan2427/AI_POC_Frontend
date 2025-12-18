@@ -6,11 +6,14 @@ import PopupModal from "../components/PopupModal";
 import CandidateInfo from "../components/CandidateInfo";
 import { useNavigate } from "react-router-dom";
 import useTabViolationDetection from "../hooks/useTabViolationDetection";
-import { postJSON, postForm, API_BASE } from "../utils/api";
+import { postForm, API_BASE } from "../utils/api";
 import { useSearchParams } from "react-router-dom";
 
 export default function Proctoring() {
   const [isNarrow, setIsNarrow] = useState(typeof window !== 'undefined' ? window.innerWidth < 900 : false);
+  useEffect(() => {
+    window.history.replaceState(null, "", window.location.href);
+  }, []);
   
   useEffect(() => {
     function onResize() {
@@ -153,12 +156,10 @@ export default function Proctoring() {
   };
   const [searchParams] = useSearchParams();
   const session_id = searchParams.get("session_id");
-  // New state for API-fetched questions
   const [questions, setQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(true);
   const [questionsError, setQuestionsError] = useState(null);
-  const [jdId, setJdId] = useState(""); // You'll need to get this from somewhere
-
+  const [jdId, setJdId] = useState(""); 
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [popupMessage, setPopupMessage] = useState("");
   const [popupVisible, setPopupVisible] = useState(false);
@@ -170,15 +171,33 @@ export default function Proctoring() {
   const [isReviewMode, setIsReviewMode] = useState(false);
   const [reviewItems, setReviewItems] = useState([]);
   const [disqualified, setDisqualified] = useState(false);
+  const [screenRecordingStarted, setScreenRecordingStarted] = useState(false);
   
-  // New state to control test start
+
   const [testStarted, setTestStarted] = useState(false);
   
   const { violationCount } = useTabViolationDetection();
 
   const navigate = useNavigate();
 
-  // Function to fetch questions from API
+  useEffect(() => {
+    const isAadhaarVerified = localStorage.getItem("isaadhaarcard"); 
+    const isCandidatePhotoVerified = localStorage.getItem("iscandidatephoto");
+    const isSessionIdVerified = localStorage.getItem("session_id");
+    if (!isSessionIdVerified) {
+      navigate(`/`);
+      return;
+    }
+    else if (isAadhaarVerified !== "true") {
+      navigate(`/aadhaar?session_id=${session_id}`);
+      return;
+    }
+    else if (isCandidatePhotoVerified !== "true") {
+      navigate(`/candidatephoto?session_id=${session_id}`);
+      return;
+    }
+  }, [navigate, session_id]); 
+  
   async function fetchQuestions(jdId) {
     if (!jdId) {
       setQuestionsError("No job description ID provided");
@@ -300,31 +319,6 @@ export default function Proctoring() {
     }
   }
 
-  // async function refetchResult() {
-  //   try {
-  //     const params = new URLSearchParams();
-  //     params.append("candidate_id", String(candidateId));
-  //     params.append("candidate_name", String(candidateName));
-
-  //     const res = await fetch(`${API_BASE}/questions/get_result`, {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  //       body: params.toString(),
-  //     });
-  //     const contentType = res.headers.get('content-type') || '';
-  //     const payload = contentType.includes('application/json') ? await res.json() : await res.text();
-  //     if (!res.ok) {
-  //       const msg = (payload && (payload.detail || payload.message || payload.error)) || `Failed to get result (${res.status})`;
-  //       throw new Error(msg);
-  //     }
-  //     setFinalResult(payload);
-  //     setShowResult(true);
-
-  //   } catch (err) {
-  //     alert(err.message || 'Failed to get result');
-  //   }
-  // }
-
   async function refetchReport() {
     try {
       navigate(`/report?session_id=${localStorage.getItem("session_id")}`);
@@ -333,7 +327,6 @@ export default function Proctoring() {
     }
   }
 
-  // Add CSS for loading spinner animation
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -413,7 +406,13 @@ export default function Proctoring() {
               </div>
             </div>
             <button 
-              style={styles.btnPrimary}
+              // style={styles.btnPrimary}
+              style={{
+                ...styles.btnPrimary,
+                opacity: screenRecordingStarted ? 1 : 0.5,
+                cursor: screenRecordingStarted ? "pointer" : "not-allowed"
+              }}
+              disabled={!screenRecordingStarted}
               onClick={handleStartTest}
             >
               Let's Start
@@ -514,7 +513,6 @@ export default function Proctoring() {
       );
     }
 
-    // Show QuestionBox when test has started
     return (
       <QuestionBox
         question={questions[currentQuestionIndex]}
@@ -565,7 +563,10 @@ export default function Proctoring() {
             }}
             />
           </div>
-          <ScreenShare candidateId={candidateId} />
+          <ScreenShare candidateId={candidateId} 
+            onRecordingStart={() => setScreenRecordingStarted(true)}
+            onRecordingStop={() => setScreenRecordingStarted(false)}
+          />
         </div>
 
         <div style={styles.rightPanel}>

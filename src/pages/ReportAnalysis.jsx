@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, XCircle, Edit3, Eye, SkipForward, BarChart3, User, Calendar, Clock, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { getJSON } from '../utils/api';
+import { getJSON,postJSON } from '../utils/api';
 import CandidateInfo from "../components/CandidateInfo";
 import { useSearchParams } from "react-router-dom";;
 
@@ -9,7 +9,6 @@ export default function ReportAnalysis() {
 
   const [searchParams] = useSearchParams();
   const session_id = searchParams.get("session_id");
-  console.log("Session ID from URL:", session_id);
 
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,22 +18,15 @@ export default function ReportAnalysis() {
   const [candidateName, setCandidateName] = useState(null);
   const navigate = useNavigate();
   useEffect(() => {
+    window.history.replaceState(null, "", window.location.href);
+  }, []);
+
+  useEffect(() => {
     const storedCandidateId = localStorage.getItem("candidate_id");
     const storedCandidateName = localStorage.getItem("candidate_name");
-
     setCandidateId(storedCandidateId || "Unknown Candidate Id");
     setCandidateName(storedCandidateName || "Unknown Candidate");
   }, []);
-  // useEffect(() => {
-  //   const storedCandidateId = localStorage.getItem('candidate_id');
-  //   if (storedCandidateId) {
-  //     setCandidateId(storedCandidateId);
-  //   } else {
-  //     setCandidateId('CAND-37bf19cd');
-  //   }
-  // }, []);
-
-  // Fetch report data when candidateId is available
   useEffect(() => {
     if (!candidateId) return;
 
@@ -71,6 +63,45 @@ export default function ReportAnalysis() {
     fetchReportData();
   }, [candidateId]);
 
+  useEffect(() => {
+    const generatePdf = async () => {
+      if (!reportData || !candidateId || !candidateName) return;
+    
+      const qaLog = reportData.data[0]?.qa_log || [];
+      if (!qaLog.length) return;
+    
+      const payload = {
+        candidate_id: candidateId,
+        candidate_name: candidateName,
+        qa_log: qaLog.map(q => ({
+          question: q.question,
+          answer: q.user_answer || q.answer || null,
+          is_correct: Boolean(q.is_correct),
+          skipped: Boolean(q.skipped),
+          edited: Boolean(q.edited),
+          marked_for_review: Boolean(q.marked_for_review),
+        })),
+      };
+    
+      try {
+        const response = await postJSON(
+          "/generatepdf/generate-question-analysis-pdf",
+          payload
+        );
+    
+        if (response?.pdf_url) {
+          window.open(response.pdf_url, "_blank");
+        }
+      } catch (err) {
+        console.error("PDF generation failed:", err);
+      }
+    };
+    
+    if (reportData && reportData.data && reportData.data.length > 0) {
+      generatePdf();
+    }
+  }, [reportData, candidateId, candidateName]); // ✅ hooks at top
+
   const retryFetch = async () => {
     if (!candidateId) {
       setError('No candidate ID available for retry');
@@ -81,7 +112,6 @@ export default function ReportAnalysis() {
     setError(null);
     try {
       const data = await getJSON(`/report/qa_logs/${candidateId}`);
-      // FIXED: Same validation logic
       if (data && data.status_code === 200 && data.data && data.data.length > 0) {
         setReportData(data);
       } else {
@@ -423,12 +453,8 @@ export default function ReportAnalysis() {
     );
   }
 
-  // FIXED: Extract data from the correct structure
   const candidateData = reportData.data[0];
   const qaLog = candidateData.qa_log || [];
-  console.log(qaLog,"qaLogqaLog"); 
-
-  // Calculate statistics
   const totalQuestions = qaLog.length;
   const correctAnswers = qaLog.filter(q => q.is_correct).length;
   const incorrectAnswers = qaLog.filter(q => !q.is_correct && !q.skipped).length;
@@ -438,6 +464,8 @@ export default function ReportAnalysis() {
   const totalScore = qaLog.reduce((sum, q) => sum + (q.score || 0), 0);
   const accuracy = totalQuestions > 0 ? ((correctAnswers / totalQuestions) * 100).toFixed(1) : 0;
 
+
+
   return (
     <div style={styles.container}>
       <div style={styles.glowA} />
@@ -445,18 +473,6 @@ export default function ReportAnalysis() {
       <div style={styles.glowC} />
       
       <div style={styles.content}>
-        {/* Header */}
-        {/* <div style={styles.header}>
-          <button 
-            style={styles.backBtn}
-            onClick={() => navigate("/proctoring")}
-            onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.15)'}
-            onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.1)'}
-          >
-            <ArrowLeft size={15} />
-          </button>
-          <h2 style={styles.title}>Test Report</h2>
-        </div> */}
          <header style={styles.header}>
         <div style={styles.headerBar}>
           <h1 style={styles.headerTitle}>REX Dashboard</h1>

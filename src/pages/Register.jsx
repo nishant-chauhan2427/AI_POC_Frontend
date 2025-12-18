@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom"; // Added useParams
 import { postJSON } from "../utils/api";
+import {decryptValue} from "../utils/decrypt"
 
 export default function Register() {
   const styles = {
@@ -103,15 +104,17 @@ export default function Register() {
   console.log(recaptcha_token);
   
   // Extract URL parameters
-  const { testid, bookingid } = useParams();
-  
+  const { testid,emailid } = useParams();
   const cleanTestId = testid?.replace("testid:", "") || "";
-  const cleanBookingId = bookingid?.replace("bookingid:", "") || "";
+  const cleanEmailId = emailid?.replace("emailid:", "") || "";
+  const decryptTestId = decryptValue(cleanTestId)
+  const decryptEmailId = decryptValue(cleanEmailId)
+  console.log(decryptEmailId,"decryptEmailId");
 
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [testId, setTestId] = useState(cleanTestId || "");
-  const [bookingId, setBookingId] = useState(cleanBookingId || "");
+  const [email, setEmail] = useState(decryptEmailId || "");
+  const [testId, setTestId] = useState(decryptTestId || "");
+  // const [bookingId, setBookingId] = useState(decryptBooking || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -169,14 +172,14 @@ export default function Register() {
           test_id: testId.trim(),
           email: email.trim(),
           recaptcha_token: token,
-          slot_id: bookingId // Added slot_id to backend payload
+          // slot_id: bookingId // Added slot_id to backend payload
         });
         
         localStorage.setItem("candidate_name", regResponse.name);
         localStorage.setItem("candidate_id", regResponse.candidate_id);
         localStorage.setItem("test_id", regResponse.test_id);
         localStorage.setItem("session_id", regResponse.session_id);
-        localStorage.setItem("bookingId", bookingId); // Store slot_id
+        // localStorage.setItem("bookingId", bookingId); // Store slot_id
         
         navigate(`/aadhaar?session_id=${regResponse.session_id}`);
       } 
@@ -200,7 +203,7 @@ export default function Register() {
         <div style={styles.header}>
           <h2 style={styles.title}>Candidate Registration</h2>
           <p style={styles.subtitle}>
-             Please enter your full name, email id to start your proctoring session
+             Please enter your full name to start your proctoring session
           </p>
         </div>
 
@@ -234,13 +237,11 @@ export default function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email id"
-              disabled={isLoading}
+              disabled={true}
             />
           </label>
         </div>
-
-        {/* Hide Test ID input field completely when auto-filled */}
-        {!testId && (
+        
           <div style={styles.inputWrap}>
             <label>
               <span style={styles.label}>Test ID</span>
@@ -250,12 +251,11 @@ export default function Register() {
                 value={testId}
                 onChange={(e) => setTestId(e.target.value)}
                 placeholder="Enter your test ID"
-                disabled={isLoading}
-                data-testid="test-id-input"
+                disabled={true}
               />
             </label>
           </div>
-        )}
+        
 
         {error && <p style={styles.error}>{error}</p>}
 

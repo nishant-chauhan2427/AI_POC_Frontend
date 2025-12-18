@@ -24,6 +24,7 @@ export default function CandidateListingData() {
           aadhar_url: item.urls?.aadhaar?.[0] || '',
           photo_url: item.urls?.photo?.[0] || '',
           video_url: item.urls?.recording?.[0] || '',
+          candidate_interview_pdf: item.urls?.interview_pdf || 'N/A',
           result: item.candidate_results?.result || 'Pending',
           percentage: item.candidate_results?.percentage || 0,
           completed_at: item.candidate_results?.completed_at?.split('T')[0] || 'N/A'

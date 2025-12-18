@@ -271,10 +271,24 @@ export default function CandidatePhotoCapture() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const isAadhaarVerified = localStorage.getItem("isaadhaarcard"); // returns string or null [web:33]
+    console.log(isAadhaarVerified,"isAadhaarVerified");
+    if (isAadhaarVerified !== "true") {
+      // not verified, redirect to Aadhaar capture
+      navigate(`/aadhaar?session_id=${session_id}`);
+      return;
+    }
+
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [navigate, session_id]); 
+  
+  // useEffect(() => {
+  //   return () => {
+  //     stopCamera();
+  //   };
+  // }, []);
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
@@ -412,6 +426,7 @@ export default function CandidatePhotoCapture() {
             const data = await postForm("/aadhaarcard/upload-candidate-image", formData);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
+            localStorage.setItem("iscandidatephoto", "true");
             navigate(`/proctoring?session_id=${localStorage.getItem("session_id")}`);
             // navigate("/proctoring");
           } catch (err) {

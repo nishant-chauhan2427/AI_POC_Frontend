@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import useScreenRecording from "../hooks/useScreenRecording";
 import { API_BASE } from "../utils/api";
 
-export default function ScreenShare({ candidateId }) {
+export default function ScreenShare({ candidateId, onRecordingStart, onRecordingStop }) {
   const styles = {
     card: { background: 'rgba(255,255,255,0.10)', borderRadius: 12, padding: '24px 24px 24px', display: 'flex', flexDirection: 'column', color: '#fff', overflow: 'hidden' },
     title: { fontSize: 18, fontWeight: 700 },
@@ -23,12 +23,12 @@ export default function ScreenShare({ candidateId }) {
   } = useScreenRecording();
   
   const [isUploading, setIsUploading] = useState(false);
+
   const [error, setError] = useState('');
   const videoRef = useRef(null);
 
   useEffect(() => {
     if (recordedChunks.length > 0) {
-      // Avoid unhandled promise rejection in console
       uploadRecording().catch(() => {});
     }
   }, [recordedChunks]);
@@ -36,8 +36,10 @@ export default function ScreenShare({ candidateId }) {
   async function handleToggleRecording() {
     if (isRecording) {
       stopRecording();
+      onRecordingStop?.();
     } else {
       startRecording();
+      onRecordingStart?.();
     }
   }
 
@@ -51,7 +53,6 @@ export default function ScreenShare({ candidateId }) {
     setError(null);
     
     try {
-      // Updated blob creation with proper MIME type for audio+video
       const blob = new Blob(recordedChunks, { 
         type: 'video/webm;codecs=vp9,opus' 
       });
@@ -59,14 +60,12 @@ export default function ScreenShare({ candidateId }) {
       const formData = new FormData();
       formData.append('candidate_id', candidateId);
       
-      // Create file with timestamp in name
       const filename = `recording-${candidateId}-${Date.now()}.webm`;
       formData.append('recording', new File([blob], filename, { 
         type: 'video/webm;codecs=vp9,opus' 
       }));
 
       const controller = new AbortController();
-      // Increase timeout to 90s for audio+video files (larger size)
       const timeoutId = setTimeout(() => controller.abort(), 90000);
       
       const response = await fetch(`${API_BASE}/frames/upload_screen_recording`, {
@@ -82,7 +81,6 @@ export default function ScreenShare({ candidateId }) {
         throw new Error(error.detail || 'Upload failed');
       }
       
-      // Clear recorded chunks after successful upload
       clearRecordedChunks();
       
       try {
@@ -106,14 +104,6 @@ export default function ScreenShare({ candidateId }) {
 
   return (
     <div style={styles.card}>
-      {/* <h3 style={styles.title}>Screen & Audio Recording</h3> */}
-      {/* <div style={styles.preview}>
-        {isRecording ? (
-          <p style={styles.hint}>Recording screen and audio in progress...</p>
-        ) : (
-          <p style={styles.hint}>Screen and microphone audio will be recorded.</p>
-        )}
-      </div> */}
       {(error || recordingError) && (
         <div style={styles.error}>
           {error || recordingError}
