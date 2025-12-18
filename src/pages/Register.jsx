@@ -107,7 +107,9 @@ export default function Register() {
   const { testid,emailid } = useParams();
   const cleanTestId = testid?.replace("testid:", "") || "";
   const cleanEmailId = emailid?.replace("emailid:", "") || "";
+  console.log(cleanEmailId,"cleanEmailId");
   const decryptTestId = decryptValue(cleanTestId)
+  console.log(decryptTestId,"cleanEmailId1");
   const decryptEmailId = decryptValue(cleanEmailId)
   console.log(decryptEmailId,"decryptEmailId");
 
