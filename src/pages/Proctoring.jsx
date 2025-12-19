@@ -221,13 +221,29 @@ export default function Proctoring() {
       }
 
       const data = await response.json();
-      
+      console.log(data,"data12345");
+      // if (data.status_code === 200 && data.data) {
+      //   setQuestions(data.data);
+      //   if (data.data.length === 0) {
+      //     setQuestionsError("No questions found for this job description");
+      //   }
+      // } 
       if (data.status_code === 200 && data.data) {
-        setQuestions(data.data);
-        if (data.data.length === 0) {
+        const normalizedQuestions = data.data.map((q) => ({
+          _id: q.question_id,
+          question: q.question_text,
+          expected_answer: q.answers?.[0]?.answer_text || "",
+          answers: q.answers || []   // optional (future use)
+        }));
+      
+        setQuestions(normalizedQuestions);
+      
+        if (normalizedQuestions.length === 0) {
           setQuestionsError("No questions found for this job description");
         }
-      } else {
+      }
+      
+       else {
         throw new Error(data.message || "Failed to fetch questions");
       }
     } catch (error) {
