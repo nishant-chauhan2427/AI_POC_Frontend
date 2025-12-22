@@ -1,5 +1,5 @@
 // export const API_BASE = "https://rex.vayuz.com/ai-interview/api/v1";
-export const API_BASE = "http://13.201.20.204/ai-interview/api/v1";
+export const API_BASE = "http://13.205.19.245//ai-interview/api/v1";
 
 // Fetch with timeout to avoid hanging UI when backend is down
 async function fetchWithTimeout(url, options = {}, timeoutMs = 6000) {
