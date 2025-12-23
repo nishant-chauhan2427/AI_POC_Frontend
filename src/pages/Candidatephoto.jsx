@@ -423,7 +423,7 @@ export default function CandidatePhotoCapture() {
           console.log(formData,"formDataformData");
           
           try {
-            const data = await postForm("/aadhaarcard/upload-candidate-image", formData);
+            const data = await postForm("/aadhaarcard/upload-candidate-image/", formData);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
             localStorage.setItem("iscandidatephoto", "true");

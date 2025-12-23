@@ -372,7 +372,7 @@ export default function AadhaarCapture() {
       formData.append("candidate_id", candidate_id);
       formData.append("candidate_name", candidate_name);
 
-      const data = await postForm("/aadhaarcard/extract-aadhaar-text", formData);
+      const data = await postForm("/aadhaarcard/extract-aadhaar-text/", formData);
       console.log(data,"data1234");
 
       setExtractedData(data.extracted_fields);
