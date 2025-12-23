@@ -6,9 +6,10 @@ import PopupModal from "../components/PopupModal";
 import CandidateInfo from "../components/CandidateInfo";
 import { useNavigate } from "react-router-dom";
 import useTabViolationDetection from "../hooks/useTabViolationDetection";
-import { postForm, API_BASE } from "../utils/api";
+import { postForm } from "../utils/api";
 import { useSearchParams } from "react-router-dom";
 
+const API_BASE=import.meta.env.VITE_API_BASE_URL
 export default function Proctoring() {
   const [isNarrow, setIsNarrow] = useState(typeof window !== 'undefined' ? window.innerWidth < 900 : false);
   useEffect(() => {

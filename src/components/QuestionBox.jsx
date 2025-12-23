@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import useAudioRecording from "../hooks/useAudioRecording";
-import { getJSON, API_BASE } from "../utils/api";
+import { getJSON } from "../utils/api";
+
+const API_BASE=import.meta.env.VITE_API_BASE_URL
 
 export default function QuestionBox({ question, onNext, candidateId, index, candidateName, sessionId, onFinishTest, isLastQuestion, onRequestReview }) {
   const { isRecording, audioBlob, startRecording, stopRecording } = useAudioRecording();

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import useScreenRecording from "../hooks/useScreenRecording";
-import { API_BASE } from "../utils/api";
+const API_BASE=import.meta.env.VITE_API_BASE_URL
 
 export default function ScreenShare({ candidateId, onRecordingStart, onRecordingStop }) {
   const styles = {

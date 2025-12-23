@@ -1,5 +1,5 @@
 // import { useCallback } from 'react';
-// import { API_BASE } from '../utils/api';
+
 
 // const useHeadPoseDetection = () => {
 //   const detectHeadPose = useCallback(async (imageData, candidateName, sessionId) => {

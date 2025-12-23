@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import { postJSON, API_BASE } from "../utils/api";
+import { postJSON } from "../utils/api";
 import useWebcamStream from "../hooks/useWebcamStream.jsx";
 // import useHeadPoseDetection from "../hooks/useHeadPoseDetection";
+const API_BASE=import.meta.env.VITE_API_BASE_URL
 
 export default function WebcamFeed({ candidateId, candidateName, sessionId, onViolation, onDisqualify }) {
   console.log("Inline styles replacing Tailwind utility classes")
