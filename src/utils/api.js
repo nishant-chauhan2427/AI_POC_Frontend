@@ -1,6 +1,7 @@
 export const API_BASE = "https://rex.vayuz.com/ai-interview/api/v1";
-// export const API_BASE = "http://13.233.120.174/ai-interview/api/v1";
-// export const API_BASE = "http://localhost:8002/ai-interview/api/v1";
+// export const API_BASE = "http://http://52.66.196.104/ai-interview/api/v1";
+
+// export const API_BASE = "http://localhost:8000/ai-interview/api/v1";
 
 
 // Fetch with timeout to avoid hanging UI when backend is down

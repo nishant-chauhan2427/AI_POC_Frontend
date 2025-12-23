@@ -24,7 +24,7 @@ export default function CandidateListingData() {
           aadhar_url: item.urls?.aadhaar?.[0] || '',
           photo_url: item.urls?.photo?.[0] || '',
           video_url: item.urls?.recording?.[0] || '',
-          candidate_interview_pdf: item.urls?.interview_pdf || 'N/A',
+          candidate_interview_pdf: item.urls?.interview_pdf?.[0] || '',
           result: item.candidate_results?.result || 'Pending',
           percentage: item.candidate_results?.percentage || 0,
           completed_at: item.candidate_results?.completed_at?.split('T')[0] || 'N/A'
@@ -255,17 +255,49 @@ export default function CandidateListingData() {
       zIndex: 1000,
       backdropFilter: 'blur(4px)'
     },
+    // modalContent: {
+    //   background: 'rgba(20,24,48,0.95)',
+    //   borderRadius: 16,
+    //   padding: '30px',
+    //   maxWidth: '90vw',
+    //   maxHeight: '90vh',
+    //   overflow: 'auto',
+    //   border: '1px solid rgba(255,255,255,0.1)',
+    //   boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+    //   position: 'relative'
+    // },
+    // modalContent: {
+    //   background: 'rgba(20,24,48,0.95)',
+    //   borderRadius: 16,
+    //   padding: '20px',
+    //   width: '95vw',
+    //   height: '90vh',
+    //   maxWidth: '95vw',
+    //   maxHeight: '90vh',
+    //   overflow: 'hidden',
+    //   border: '1px solid rgba(255,255,255,0.1)',
+    //   boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+    //   position: 'relative',
+    //   display: 'flex',        // 🔥 IMPORTANT
+    //   flexDirection: 'column' // 🔥 IMPORTANT
+    // },
     modalContent: {
       background: 'rgba(20,24,48,0.95)',
       borderRadius: 16,
-      padding: '30px',
-      maxWidth: '90vw',
+      padding: '20px',
+      width: '95vw',
+      height: '90vh',
+      maxWidth: '95vw',
       maxHeight: '90vh',
-      overflow: 'auto',
+      overflow: 'hidden',
       border: '1px solid rgba(255,255,255,0.1)',
       boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-      position: 'relative'
+      position: 'relative',
+      display: 'flex',
+      flexDirection: 'column'
     },
+    
+    
     closeButton: {
       position: 'absolute',
       top: '15px',
@@ -291,30 +323,49 @@ export default function CandidateListingData() {
       fontWeight: 600,
       color: '#fff'
     },
+    // modalImage: {
+    //   width: '100%',
+    //   maxWidth: '600px',
+    //   borderRadius: 12,
+    //   border: '1px solid rgba(255,255,255,0.1)'
+    // },
     modalImage: {
+      flex: 1,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       width: '100%',
-      maxWidth: '600px',
-      borderRadius: 12,
-      border: '1px solid rgba(255,255,255,0.1)'
+      height: '100%'
     },
+    
     modalVideo: {
       width: '100%',
       maxWidth: '800px',
       borderRadius: 12,
       border: '1px solid rgba(255,255,255,0.1)'
     },
+    // modalPdf: {
+    //     width: '100%',
+    //     maxWidth: '800px',
+    //     height: '70vh',
+    //     borderRadius: 12,
+    //     overflowY:'hidden',
+    //     border: '1px solid rgba(255,255,255,0.1)',
+    //     display: 'flex',
+    //     justifyContent: 'center',
+    //     alignItems: 'center',
+    //     background: '#000'
+    //   },
     modalPdf: {
-        width: '100%',
-        maxWidth: '800px',
-        height: '70vh',
-        borderRadius: 12,
-        overflowY:'hidden',
-        border: '1px solid rgba(255,255,255,0.1)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        background: '#000'
-      },
+      flex: 1,                 // 🔥 take remaining modal height
+      width: '100%',
+      height: '100%',
+      borderRadius: 12,
+      overflow: 'hidden',
+      border: '1px solid rgba(255,255,255,0.1)',
+      background: '#000'
+    },
+    
       fullImage: {
         width: '80%',
         height: '80%',
@@ -363,14 +414,35 @@ export default function CandidateListingData() {
 
   const renderModalContent = () => {
     switch (modalContent.type) {
+      // case 'image':
+      //   return (
+      //     <>
+      //     {/* <h1>Hello</h1> */}
+      //       <h2 style={styles.modalTitle}>{modalContent.title}</h2>
+      //       <img src={modalContent.url} alt={modalContent.title} style={styles.modalImage} />
+      //     </>
+      //   );
       case 'image':
-        return (
-          <>
-          {/* <h1>Hello</h1> */}
-            <h2 style={styles.modalTitle}>{modalContent.title}</h2>
-            <img src={modalContent.url} alt={modalContent.title} style={styles.modalImage} />
-          </>
-        );
+  return (
+    <>
+      <h2 style={styles.modalTitle}>{modalContent.title}</h2>
+
+      <div style={styles.modalImage}>
+        <img
+          src={modalContent.url}
+          alt={modalContent.title}
+          style={{
+            maxWidth: '90%',
+            maxHeight: '90%',
+            objectFit: 'contain',
+            borderRadius: '50%', // 🔥 remove if you want normal image
+            background: '#fff'
+          }}
+        />
+      </div>
+    </>
+  );
+
       case 'video':
         return (
           <>
@@ -384,7 +456,23 @@ export default function CandidateListingData() {
             />
           </>
         );
-      case 'pdf':
+        case 'pdf':
+          return (
+            <>
+              <h2 style={styles.modalTitle}>{modalContent.title}</h2>
+              <div style={styles.modalPdf}>
+                <iframe
+                  src={modalContent.url}
+                  title={modalContent.title}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 'none' }}
+                />
+              </div>
+            </>
+          );
+        
+       case 'default':
         return (
           <>
           {/* <h1>pdf</h1> */}
@@ -451,6 +539,7 @@ export default function CandidateListingData() {
                   <th style={styles.th}>Aadhaar Card</th>
                   <th style={styles.th}>Photo</th>
                   <th style={styles.th}>Interview Video</th>
+                  <th style={styles.th}>Interview PDF</th>
                   <th style={styles.th}>Percentage</th>
                   <th style={styles.th}>Completed At</th>
                   <th style={styles.th}>Result</th>
@@ -504,6 +593,25 @@ export default function CandidateListingData() {
                         ▶️ Play
                       </button>
                     </td>
+                    <td style={styles.td}>
+  <button
+    onClick={() =>
+      handlePreview(
+        'pdf',
+        candidate.candidate_interview_pdf,
+        `${candidate.candidate_name} - Interview PDF`
+      )
+    }
+    style={{
+      ...styles.button,
+      opacity: candidate.candidate_interview_pdf ? 1 : 0.5,
+      cursor: candidate.candidate_interview_pdf ? 'pointer' : 'not-allowed'
+    }}
+    disabled={!candidate.candidate_interview_pdf}
+  >
+    📄 View
+  </button>
+</td>
 
                     <td style={styles.td}>
                       <div style={styles.progressContainer}>
