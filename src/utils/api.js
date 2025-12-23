@@ -32,7 +32,7 @@ export async function postForm(endpoint, formData) {
 
 export async function postJSON(endpoint, data) {
   console.log("hello");
-  const res = await fetchWithTimeout(`${API_BASE}${endpoint}`, {
+  const res = await fetchWithTimeout(`https://rex.vayuz.com/ai-interview/api/v1${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
