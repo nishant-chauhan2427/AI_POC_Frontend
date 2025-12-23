@@ -156,7 +156,7 @@ export default function Register() {
     };
     
     try {
-      const roleResponse = await postJSON("/register/check-role/", { 
+      const roleResponse = await postJSON("/register/check-role", { 
         email: email.trim(),
       });
       
