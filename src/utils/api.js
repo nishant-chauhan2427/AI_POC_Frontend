@@ -1,5 +1,5 @@
-export const API_BASE = "https://rex.vayuz.com/ai-interview/api/v1";
-
+// export const API_BASE = "https://rex.vayuz.com/ai-interview/api/v1";
+const API_BASE=import.meta.env.API_BASE_URL
 
 // export const API_BASE = "http://localhost:8000/ai-interview/api/v1";
 
@@ -32,7 +32,7 @@ export async function postForm(endpoint, formData) {
 
 export async function postJSON(endpoint, data) {
   console.log("hello");
-  const res = await fetchWithTimeout(`https://rex.vayuz.com/ai-interview/api/v1${endpoint}`, {
+  const res = await fetchWithTimeout(`${API_BASE}${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
