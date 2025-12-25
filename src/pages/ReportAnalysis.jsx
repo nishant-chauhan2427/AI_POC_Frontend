@@ -16,6 +16,8 @@ export default function ReportAnalysis() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [candidateId, setCandidateId] = useState(null);
   const [candidateName, setCandidateName] = useState(null);
+  const [pdfUrl, setPdfUrl] = useState(null);
+
   const navigate = useNavigate();
   useEffect(() => {
     window.history.replaceState(null, "", window.location.href);
@@ -62,14 +64,13 @@ export default function ReportAnalysis() {
 
     fetchReportData();
   }, [candidateId]);
-
   useEffect(() => {
     const generatePdf = async () => {
       if (!reportData || !candidateId || !candidateName) return;
-    
+  
       const qaLog = reportData.data[0]?.qa_log || [];
       if (!qaLog.length) return;
-    
+  
       const payload = {
         candidate_id: candidateId,
         candidate_name: candidateName,
@@ -82,25 +83,65 @@ export default function ReportAnalysis() {
           marked_for_review: Boolean(q.marked_for_review),
         })),
       };
-    
+  
       try {
         const response = await postJSON(
           "/generatepdf/generate-question-analysis-pdf",
           payload
         );
-    
+  
         if (response?.pdf_url) {
-          window.open(response.pdf_url, "_blank");
+          // ✅ generate silently
+          setPdfUrl(response.pdf_url);
         }
       } catch (err) {
         console.error("PDF generation failed:", err);
       }
     };
-    
-    if (reportData && reportData.data && reportData.data.length > 0) {
+  
+    if (reportData?.data?.length > 0) {
       generatePdf();
     }
-  }, [reportData, candidateId, candidateName]); // ✅ hooks at top
+  }, [reportData, candidateId, candidateName]);
+  
+  // useEffect(() => {
+  //   const generatePdf = async () => {
+  //     if (!reportData || !candidateId || !candidateName) return;
+    
+  //     const qaLog = reportData.data[0]?.qa_log || [];
+  //     if (!qaLog.length) return;
+    
+  //     const payload = {
+  //       candidate_id: candidateId,
+  //       candidate_name: candidateName,
+  //       qa_log: qaLog.map(q => ({
+  //         question: q.question,
+  //         answer: q.user_answer || q.answer || null,
+  //         is_correct: Boolean(q.is_correct),
+  //         skipped: Boolean(q.skipped),
+  //         edited: Boolean(q.edited),
+  //         marked_for_review: Boolean(q.marked_for_review),
+  //       })),
+  //     };
+    
+  //     try {
+  //       const response = await postJSON(
+  //         "/generatepdf/generate-question-analysis-pdf",
+  //         payload
+  //       );
+    
+  //       if (response?.pdf_url) {
+  //         window.open(response.pdf_url, "_blank");
+  //       }
+  //     } catch (err) {
+  //       console.error("PDF generation failed:", err);
+  //     }
+  //   };
+    
+  //   if (reportData && reportData.data && reportData.data.length > 0) {
+  //     generatePdf();
+  //   }
+  // }, [reportData, candidateId, candidateName]); // ✅ hooks at top
 
   const retryFetch = async () => {
     if (!candidateId) {
