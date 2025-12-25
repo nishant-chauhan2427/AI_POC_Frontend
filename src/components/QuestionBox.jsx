@@ -380,38 +380,86 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
     }
   }
 
-  async function handleFinish() {
-    // Stop speech when finishing
-    stopSpeech();
+  // async function handleFinish() {
+  //   // Stop speech when finishing
+  //   stopSpeech();
     
+  //   setIsSubmitting(true);
+  //   try {
+  //     // Check if there are marked-for-review questions first
+  //     const data = await getJSON(`/questions/get_review_questions?candidate_id=${encodeURIComponent(candidateId)}`);
+  //     const list = Array.isArray(data?.review_questions) ? data.review_questions : [];
+  //     if (list.length > 0 && typeof onRequestReview === 'function') {
+  //       // Hand over to parent to review before final submission
+  //       onRequestReview(list);
+  //       return;
+  //     }
+
+  //     // No items to review -> finalize
+  //     const params = new URLSearchParams();
+  //     params.append("candidate_id", String(candidateId));
+  //     params.append("candidate_name", String(candidateName));
+
+  //     const res = await fetch(`${API_BASE}/questions/get_result`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  //       body: params.toString(),
+  //     });
+
+  //     const contentType = res.headers.get('content-type') || '';
+  //     const payload = contentType.includes('application/json') ? await res.json() : await res.text();
+  //     if (!res.ok) {
+  //       const msg = (payload && (payload.detail || payload.message || payload.error)) || `Failed to get result (${res.status})`;
+  //       throw new Error(msg);
+  //     }
+  //     onFinishTest(payload);
+  //   } catch (err) {
+  //     setError(err.message || "Failed to finish.");
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // }
+  async function handleFinish() {
+    if (isRecording) {
+      stopRecording();
+      setError("Please stop your recording before finishing the test.");
+      return;
+    }
+  
+    if (isSubmitting) return;
+  
+    stopSpeech();
     setIsSubmitting(true);
+  
     try {
-      // Check if there are marked-for-review questions first
-      const data = await getJSON(`/questions/get_review_questions?candidate_id=${encodeURIComponent(candidateId)}`);
-      const list = Array.isArray(data?.review_questions) ? data.review_questions : [];
+      const data = await getJSON(
+        `/questions/get_review_questions?candidate_id=${encodeURIComponent(candidateId)}`
+      );
+  
+      const list = Array.isArray(data?.review_questions)
+        ? data.review_questions
+        : [];
+  
       if (list.length > 0 && typeof onRequestReview === 'function') {
-        // Hand over to parent to review before final submission
         onRequestReview(list);
         return;
       }
-
-      // No items to review -> finalize
+  
       const params = new URLSearchParams();
       params.append("candidate_id", String(candidateId));
       params.append("candidate_name", String(candidateName));
-
+  
       const res = await fetch(`${API_BASE}/questions/get_result`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: params.toString(),
       });
-
-      const contentType = res.headers.get('content-type') || '';
-      const payload = contentType.includes('application/json') ? await res.json() : await res.text();
+  
+      const payload = await res.json();
       if (!res.ok) {
-        const msg = (payload && (payload.detail || payload.message || payload.error)) || `Failed to get result (${res.status})`;
-        throw new Error(msg);
+        throw new Error(payload?.detail || "Failed to get result");
       }
+  
       onFinishTest(payload);
     } catch (err) {
       setError(err.message || "Failed to finish.");
@@ -419,7 +467,7 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
       setIsSubmitting(false);
     }
   }
-
+  
   const handleNext = () => {
     // Stop speech when going to next question
     stopSpeech();

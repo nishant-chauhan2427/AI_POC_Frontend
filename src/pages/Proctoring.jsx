@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import WebcamFeed from "../components/WebcamFeed";
 import ScreenShare from "../components/ScreenShare";
 import QuestionBox from "../components/QuestionBox";
@@ -8,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import useTabViolationDetection from "../hooks/useTabViolationDetection";
 import { postForm } from "../utils/api";
 import { useSearchParams } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+
 
 const API_BASE=import.meta.env.VITE_API_BASE_URL
 export default function Proctoring() {
@@ -180,6 +181,7 @@ export default function Proctoring() {
   const { violationCount } = useTabViolationDetection();
 
   const navigate = useNavigate();
+  const screenShareRef = useRef(null);
 
   useEffect(() => {
     const isAadhaarVerified = localStorage.getItem("isaadhaarcard"); 
@@ -532,22 +534,49 @@ export default function Proctoring() {
 
     return (
       <QuestionBox
-        question={questions[currentQuestionIndex]}
-        index={currentQuestionIndex}
-        onNext={nextQuestion}
-        candidateId={candidateId}
-        candidateName={candidateName}
-        sessionId={sessionId}
-        isLastQuestion={currentQuestionIndex === questions.length - 1}
-        onFinishTest={(result) => {
-          setFinalResult(result);
-          setShowResult(true);
-        }}
-        onRequestReview={(items) => {
-          setReviewItems(items);
-          setIsReviewMode(true);
-        }}
-      />
+  question={questions[currentQuestionIndex]}
+  index={currentQuestionIndex}
+  onNext={nextQuestion}
+  candidateId={candidateId}
+  candidateName={candidateName}
+  sessionId={sessionId}
+  isLastQuestion={currentQuestionIndex === questions.length - 1}
+  onFinishTest={async (result) => {
+    try {
+      // 🔴 STOP & UPLOAD SCREEN RECORDING
+      await screenShareRef.current?.stopAndUpload();
+    } catch (e) {
+      console.error("Screen recording upload failed:", e);
+      // Optional: block or allow finish
+    }
+
+    // ✅ Continue normal finish flow
+    setFinalResult(result);
+    setShowResult(true);
+  }}
+  onRequestReview={(items) => {
+    setReviewItems(items);
+    setIsReviewMode(true);
+  }}
+/>
+
+      // <QuestionBox
+      //   question={questions[currentQuestionIndex]}
+      //   index={currentQuestionIndex}
+      //   onNext={nextQuestion}
+      //   candidateId={candidateId}
+      //   candidateName={candidateName}
+      //   sessionId={sessionId}
+      //   isLastQuestion={currentQuestionIndex === questions.length - 1}
+      //   onFinishTest={(result) => {
+      //     setFinalResult(result);
+      //     setShowResult(true);
+      //   }}
+      //   onRequestReview={(items) => {
+      //     setReviewItems(items);
+      //     setIsReviewMode(true);
+      //   }}
+      // />
     );
   }
 
@@ -580,10 +609,17 @@ export default function Proctoring() {
             }}
             />
           </div>
-          <ScreenShare candidateId={candidateId} 
+          <ScreenShare
+  ref={screenShareRef}
+  candidateId={candidateId}
+  onRecordingStart={() => setScreenRecordingStarted(true)}
+  onRecordingStop={() => setScreenRecordingStarted(false)}
+/>
+
+          {/* <ScreenShare candidateId={candidateId} 
             onRecordingStart={() => setScreenRecordingStarted(true)}
             onRecordingStop={() => setScreenRecordingStarted(false)}
-          />
+          /> */}
         </div>
 
         <div style={styles.rightPanel}>
