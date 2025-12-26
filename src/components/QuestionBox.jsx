@@ -4,7 +4,7 @@ import { getJSON } from "../utils/api";
 
 const API_BASE=import.meta.env.VITE_API_BASE_URL
 
-export default function QuestionBox({ question, onNext, candidateId, index, candidateName, sessionId, onFinishTest, isLastQuestion, onRequestReview }) {
+export default function QuestionBox({ question, onNext, candidateId, index, candidateName, sessionId, onFinishTest, isLastQuestion, onRequestReview,screenShareRef }) {
   const { isRecording, audioBlob, startRecording, stopRecording } = useAudioRecording();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -419,19 +419,83 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
   //     setIsSubmitting(false);
   //   }
   // }
-  async function handleFinish() {
-    if (isRecording) {
-      stopRecording();
-      setError("Please stop your recording before finishing the test.");
-      return;
-    }
+  // async function handleFinish() {
+  //   if (isRecording) {
+  //     stopRecording();
+  //     setError("Please stop your recording before finishing the test.");
+  //     return;
+  //   }
   
+  //   if (isSubmitting) return;
+  
+  //   stopSpeech();
+  //   setIsSubmitting(true);
+  
+  //   try {
+  //     const data = await getJSON(
+  //       `/questions/get_review_questions?candidate_id=${encodeURIComponent(candidateId)}`
+  //     );
+  
+  //     const list = Array.isArray(data?.review_questions)
+  //       ? data.review_questions
+  //       : [];
+  
+  //     if (list.length > 0 && typeof onRequestReview === 'function') {
+  //       onRequestReview(list);
+  //       return;
+  //     }
+  
+  //     const params = new URLSearchParams();
+  //     params.append("candidate_id", String(candidateId));
+  //     params.append("candidate_name", String(candidateName));
+  
+  //     const res = await fetch(`${API_BASE}/questions/get_result`, {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  //       body: params.toString(),
+  //     });
+  
+  //     const payload = await res.json();
+  //     if (!res.ok) {
+  //       throw new Error(payload?.detail || "Failed to get result");
+  //     }
+  
+  //     onFinishTest(payload);
+  //   } catch (err) {
+  //     setError(err.message || "Failed to finish.");
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // }
+  async function handleFinish() {
     if (isSubmitting) return;
   
     stopSpeech();
     setIsSubmitting(true);
   
     try {
+      console.log("🏁 Finish Test clicked");
+      
+      // ✅ STEP 1: Stop screen recording and wait for upload to complete
+      if (screenShareRef?.current) {
+        try {
+          console.log("📹 Uploading screen recording...");
+          const uploadResult = await screenShareRef.current.stopAndUpload();
+          console.log("✅ Screen recording upload completed:", uploadResult);
+        } catch (uploadError) {
+          console.error("❌ Screen recording upload failed:", uploadError);
+          // Continue anyway, but log the error
+          // If you want to stop on upload failure, uncomment:
+          // setError("Failed to upload screen recording");
+          // setIsSubmitting(false);
+          // return;
+        }
+      } else {
+        console.warn("⚠️ screenShareRef not available");
+      }
+  
+      // ✅ STEP 2: Check for marked-for-review questions
+      console.log("📋 Fetching review questions...");
       const data = await getJSON(
         `/questions/get_review_questions?candidate_id=${encodeURIComponent(candidateId)}`
       );
@@ -440,18 +504,22 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
         ? data.review_questions
         : [];
   
-      if (list.length > 0 && typeof onRequestReview === 'function') {
+      if (list.length > 0 && typeof onRequestReview === "function") {
+        console.log("🔍 Found review questions, showing review screen");
         onRequestReview(list);
+        setIsSubmitting(false);
         return;
       }
   
+      // ✅ STEP 3: Submit final result
+      console.log("📤 Submitting final result...");
       const params = new URLSearchParams();
       params.append("candidate_id", String(candidateId));
       params.append("candidate_name", String(candidateName));
   
       const res = await fetch(`${API_BASE}/questions/get_result`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: params.toString(),
       });
   
@@ -460,9 +528,11 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
         throw new Error(payload?.detail || "Failed to get result");
       }
   
+      console.log("✅ Test completed successfully");
       onFinishTest(payload);
     } catch (err) {
-      setError(err.message || "Failed to finish.");
+      console.error("❌ Error in handleFinish:", err);
+      setError(err.message || "Failed to finish. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

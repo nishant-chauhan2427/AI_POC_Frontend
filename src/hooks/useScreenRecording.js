@@ -159,6 +159,21 @@ export default function useScreenRecording() {
       }, 100);
     }
   };
+  const stopRecordingAsync = () =>
+  new Promise((resolve) => {
+    if (!mediaRecorderRef.current) return resolve();
+
+    const recorder = mediaRecorderRef.current;
+
+    const handleStop = () => {
+      recorder.removeEventListener("stop", handleStop);
+      resolve();
+    };
+
+    recorder.addEventListener("stop", handleStop);
+    recorder.stop();
+  });
+
 
   const downloadRecording = () => {
     if (recordedChunks.length === 0) return;
@@ -187,6 +202,7 @@ export default function useScreenRecording() {
     error,
     startRecording,
     stopRecording,
+    stopRecordingAsync,
     downloadRecording,
     clearRecordedChunks,
   };

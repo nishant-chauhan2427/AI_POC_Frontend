@@ -533,7 +533,33 @@ export default function Proctoring() {
     }
 
     return (
-      <QuestionBox
+//       <QuestionBox
+//   question={questions[currentQuestionIndex]}
+//   index={currentQuestionIndex}
+//   onNext={nextQuestion}
+//   candidateId={candidateId}
+//   candidateName={candidateName}
+//   sessionId={sessionId}
+//   isLastQuestion={currentQuestionIndex === questions.length - 1}
+//   onFinishTest={async (result) => {
+//     try {
+//       // 🔴 STOP & UPLOAD SCREEN RECORDING
+//       await screenShareRef.current?.stopAndUpload();
+//     } catch (e) {
+//       console.error("Screen recording upload failed:", e);
+//       // Optional: block or allow finish
+//     }
+
+//     // ✅ Continue normal finish flow
+//     setFinalResult(result);
+//     setShowResult(true);
+//   }}
+//   onRequestReview={(items) => {
+//     setReviewItems(items);
+//     setIsReviewMode(true);
+//   }}
+// />
+<QuestionBox
   question={questions[currentQuestionIndex]}
   index={currentQuestionIndex}
   onNext={nextQuestion}
@@ -541,23 +567,19 @@ export default function Proctoring() {
   candidateName={candidateName}
   sessionId={sessionId}
   isLastQuestion={currentQuestionIndex === questions.length - 1}
-  onFinishTest={async (result) => {
-    try {
-      // 🔴 STOP & UPLOAD SCREEN RECORDING
-      await screenShareRef.current?.stopAndUpload();
-    } catch (e) {
-      console.error("Screen recording upload failed:", e);
-      // Optional: block or allow finish
-    }
 
-    // ✅ Continue normal finish flow
+  // 🔴 onFinishTest should ONLY handle UI state
+  onFinishTest={(result) => {
     setFinalResult(result);
     setShowResult(true);
   }}
+
   onRequestReview={(items) => {
     setReviewItems(items);
     setIsReviewMode(true);
   }}
+
+  screenShareRef={screenShareRef}
 />
 
       // <QuestionBox
