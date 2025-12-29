@@ -181,23 +181,49 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
     }
   }
 
+  // const handleConfirmSubmit = async () => {
+  //   if (!currentAudioBlob || !transcriptPreview) {
+  //     setError("No audio or transcript available to submit.");
+  //     return;
+  //   }
+
+  //   try {
+  //     await submitAnswer(currentAudioBlob);
+  //     setIsPreviewMode(false);
+  //     setTranscriptPreview(null);
+  //     setCurrentAudioBlob(null);
+  //   } catch (err) {
+  //     // Error is already handled in submitAnswer
+  //     console.error('Submit error:', err);
+  //   }
+  // };
   const handleConfirmSubmit = async () => {
     if (!currentAudioBlob || !transcriptPreview) {
       setError("No audio or transcript available to submit.");
       return;
     }
-
+  
     try {
       await submitAnswer(currentAudioBlob);
+  
+      // reset preview state
       setIsPreviewMode(false);
       setTranscriptPreview(null);
       setCurrentAudioBlob(null);
+  
+      // 🔥 AUTO MOVE TO NEXT QUESTION
+      setTimeout(() => {
+        if (isLastQuestion) {
+          handleFinish(); // last question → finish test
+        } else if (typeof onNext === "function") {
+          onNext(); // auto next question
+        }
+      }, 300); // small delay for smooth UI
     } catch (err) {
-      // Error is already handled in submitAnswer
-      console.error('Submit error:', err);
+      console.error("Submit error:", err);
     }
   };
-
+  
   const handleReRecord = () => {
     setIsPreviewMode(false);
     setTranscriptPreview(null);
@@ -767,7 +793,7 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
               </button>
             </>
           )}
-          <button
+          {/* <button
             onClick={handleMarkForReview}
             disabled={!hasAnswered || isSubmitting || isMarkingForReview}
             style={styles.btnReview(hasAnswered && !isMarkingForReview)}
@@ -781,7 +807,7 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
             ) : (
               '🔖 Mark for Review'
             )}
-          </button>
+          </button> */}
           {isLastQuestion ? (
             <button onClick={handleFinish} disabled={isSubmitting} style={styles.btnFinish}>
               {isSubmitting ? (
@@ -792,11 +818,14 @@ export default function QuestionBox({ question, onNext, candidateId, index, cand
               ) : (
                 <>🏁 Finish Test</>
               )}
+            
             </button>
           ) : (
-            <button onClick={handleNext} disabled={isSubmitting} style={styles.btnNext}>
-              Next ➡️
-            </button>
+            <></>
+            
+            // <button onClick={handleNext} disabled={isSubmitting} style={styles.btnNext}>
+            //   Next ➡️
+            // </button>
           )}
         </div>
       </div>

@@ -223,8 +223,8 @@ export default function AadhaarCapture() {
       top: '50%',
       left: '50%',
       transform: 'translate(-50%, -50%)',
-      width: '85%',
-      height: '75%',
+      width: '70%',
+      height: '55%',
       border: '3px dashed rgba(99,102,241,0.8)',
       borderRadius: 12,
       pointerEvents: 'none',
@@ -274,6 +274,21 @@ export default function AadhaarCapture() {
       display: 'flex',
       gap: 12,
       marginTop: 12
+    },
+    timerDisplay: {
+      position: 'absolute',
+      top: 20,
+      right: 20,
+      background: 'rgba(99,102,241,0.9)',
+      padding: '10px 16px',
+      borderRadius: 8,
+      fontSize: 18,
+      fontWeight: 800,
+      color: '#fff',
+      zIndex: 10,
+      minWidth: 60,
+      textAlign: 'center',
+      boxShadow: '0 4px 12px rgba(99,102,241,0.4)'
     }
   };
   
@@ -290,7 +305,10 @@ export default function AadhaarCapture() {
   const [error, setError] = useState("");
   const [extractedData, setExtractedData] = useState(null);
   const [success, setSuccess] = useState(false);
-
+  const [timer, setTimer] = useState(10);
+  const detectionIntervalRef = useRef(null);
+  const timerIntervalRef = useRef(null);
+  const stableFrameCountRef = useRef(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -301,58 +319,137 @@ export default function AadhaarCapture() {
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject.getTracks().forEach(t => t.stop());
     }
-  };
+  
+    if (detectionIntervalRef.current) {
+      clearInterval(detectionIntervalRef.current);
+    }
 
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+  
+    stableFrameCountRef.current = 0;
+    setTimer(10);
+  };
+  
   const startCamera = async () => {
     try {
       setError("");
       setShowModal(true);
-      
+      setTimer(10);
+  
       setTimeout(async () => {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: 'environment',
-              width: { ideal: 1280 },
-              height: { ideal: 960 }
-            }
-          });
-          
-          if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-          }
-        } catch (err) {
-          setError("Unable to access camera. Please check permissions.");
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: 1280, height: 960 }
+        });
+  
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          startAutoDetect(); 
         }
       }, 100);
-    } catch (err) {
-      setError("Unable to access camera. Please check permissions.");
-      setShowModal(false);
+    } catch {
+      setError("Unable to access camera.");
     }
   };
+  
+  const startTimer = () => {
+    setTimer(10);
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
 
-  const capturePhoto = () => {
+    timerIntervalRef.current = setInterval(() => {
+      setTimer(prev => {
+        const newTimer = prev - 1;
+        if (newTimer <= 2) {
+          clearInterval(timerIntervalRef.current);
+          // Auto-capture when timer reaches 2 seconds
+          setTimeout(() => {
+            capturePhoto();
+          }, (prev - 2) * 1000); // Wait for timer to reach exactly 2 seconds
+        }
+        return newTimer;
+      });
+    }, 1000);
+  };
+  
+  const startAutoDetect = () => {
     if (!videoRef.current || !canvasRef.current) return;
-
-    try {
-      const context = canvasRef.current.getContext('2d');
+  
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+  
+    detectionIntervalRef.current = setInterval(() => {
       const video = videoRef.current;
+      if (!video.videoWidth) return;
+  
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+  
+      ctx.drawImage(video, 0, 0);
 
-      canvasRef.current.width = video.videoWidth;
-      canvasRef.current.height = video.videoHeight;
-      
-      context.drawImage(video, 0, 0);
-      const imageData = canvasRef.current.toDataURL('image/jpeg');
-      
-      setCapturedImage(imageData);
-      stopCamera();
-      setShowModal(false);
-    } catch (err) {
-      setError("Failed to capture photo. Please try again.");
-    }
+      const boxWidth = video.videoWidth * 0.7;
+      const boxHeight = video.videoHeight * 0.55;
+      const boxX = (video.videoWidth - boxWidth) / 2;
+      const boxY = (video.videoHeight - boxHeight) / 2;
+  
+      const imageData = ctx.getImageData(boxX, boxY, boxWidth, boxHeight);
+      const pixels = imageData.data;
+  
+      let brightness = 0;
+      let edgeCount = 0;
+  
+      for (let i = 0; i < pixels.length; i += 4) {
+        const gray = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+        brightness += gray;
+  
+        if (i > 4 && Math.abs(gray - pixels[i - 4]) > 25) {
+          edgeCount++;
+        }
+      }
+  
+      brightness /= pixels.length / 4;
+  
+      const looksLikeDocument =
+        brightness > 80 &&
+        brightness < 220 &&
+        edgeCount > 1200;
+  
+      if (looksLikeDocument) {
+        stableFrameCountRef.current++;
+        
+        // Start timer only on first detection
+        if (stableFrameCountRef.current === 1) {
+          startTimer();
+        }
+      } else {
+        stableFrameCountRef.current = 0;
+        setTimer(10);
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+        }
+      }
+    }, 500);
   };
+  
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0);
+
+    const image = canvas.toDataURL("image/jpeg");
+    setCapturedImage(image);
+    stopCamera();
+    setShowModal(false);
+  };
+ 
   const handleExtract = async () => {
     if (!capturedImage) {
       setError("Please capture an image first");
@@ -537,19 +634,16 @@ export default function AadhaarCapture() {
               <div style={styles.guidingBox}>
                 <div style={styles.guidingBoxLabel}>Place Aadhaar Card Here</div>
               </div>
+              {showModal && (
+                <div style={styles.timerDisplay}>
+                  {timer}s
+                </div>
+              )}
             </div>
 
             <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginBottom: 12, textAlign: 'center' }}>
-              Position your Aadhaar card in the frame and click "Click Image"
+              Position your Aadhaar card in the frame. Auto-capture in {timer} seconds
             </p>
-
-            <button
-              style={styles.captureButton}
-              onClick={capturePhoto}
-            >
-              <Camera size={20} />
-              Click Image
-            </button>
 
             <div style={styles.modalButtonGroup}>
               <button

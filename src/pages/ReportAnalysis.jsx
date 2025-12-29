@@ -592,10 +592,10 @@ export default function ReportAnalysis() {
                 <span style={styles.statLabel}>Edited Answers</span>
                 <span style={styles.statValue}>{editedQuestions}</span>
               </div>
-              <div style={styles.statRow}>
+              {/* <div style={styles.statRow}>
                 <span style={styles.statLabel}>Marked for Review</span>
                 <span style={styles.statValue}>{reviewedQuestions}</span>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
