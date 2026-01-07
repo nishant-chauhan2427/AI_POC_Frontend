@@ -1,261 +1,263 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, X, CheckCircle, RotateCw } from "lucide-react";
-import  {postForm} from "../utils/api";
+import { postForm } from "../utils/api";
 import { useNavigate } from "react-router-dom";
 import { useSearchParams } from "react-router-dom";
-
+import SparklesBackground from "../components/BackGround";
 export default function CandidatePhotoCapture() {
   const styles = {
     page: {
-      minHeight: '100vh',
-      width: '100vw',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      minHeight: "100vh",
+      width: "100vw",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       padding: 16,
-      background: 'radial-gradient(1200px 600px at 10% 10%, rgba(99,102,241,0.18), transparent),\n                  radial-gradient(1200px 600px at 90% 20%, rgba(168,85,247,0.15), transparent),\n                  radial-gradient(1200px 600px at 10% 90%, rgba(59,130,246,0.12), transparent),\n                  #0b1020',
-      color: '#fff',
-      position: 'relative',
-      zIndex: 1
+      background:
+        "radial-gradient(1200px 600px at 10% 10%, rgba(99,102,241,0.18), transparent),\n                  radial-gradient(1200px 600px at 90% 20%, rgba(168,85,247,0.15), transparent),\n                  radial-gradient(1200px 600px at 10% 90%, rgba(59,130,246,0.12), transparent),\n                  #0b1020",
+      color: "#fff",
+      position: "relative",
+      zIndex: 1,
     },
     logo: {
-      position: 'absolute',
+      position: "absolute",
       top: 20,
       left: 20,
-      zIndex: 10
+      zIndex: 10,
     },
     card: {
-      width: '100%',
+      width: "100%",
       maxWidth: 540,
-      background: 'rgba(255,255,255,0.08)',
-      backdropFilter: 'blur(10px)',
-      WebkitBackdropFilter: 'blur(10px)',
+      background: "rgba(255,255,255,0.08)",
+      backdropFilter: "blur(10px)",
+      WebkitBackdropFilter: "blur(10px)",
       borderRadius: 16,
       padding: 24,
-      boxShadow: '0 20px 40px rgba(0,0,0,0.35)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'stretch',
-      gap: 16
+      boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: 16,
     },
     header: { marginBottom: 8 },
     title: { fontSize: 24, fontWeight: 800, marginBottom: 6 },
-    subtitle: { color: 'rgba(255,255,255,0.85)', fontSize: 14 },
+    subtitle: { color: "rgba(255,255,255,0.85)", fontSize: 14 },
     preview: {
       width: 260,
       height: 260,
-      borderRadius: '50%',
-      objectFit: 'cover',
-      border: '3px solid rgba(99,102,241,0.8)',
+      borderRadius: "50%",
+      objectFit: "cover",
+      border: "3px solid rgba(99,102,241,0.8)",
       marginBottom: 12,
-      backgroundColor: '#0b1020',
-      display: 'block',
-      margin: '0 auto 12px auto'
+      backgroundColor: "#0b1020",
+      display: "block",
+      margin: "0 auto 12px auto",
     },
     buttonGroup: {
-      display: 'flex',
+      display: "flex",
       gap: 12,
-      marginTop: 8
+      marginTop: 8,
     },
     button: {
       flex: 1,
-      padding: '12px 16px',
+      padding: "12px 16px",
       fontWeight: 800,
       borderRadius: 10,
-      color: '#fff',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #3b82f6)',
-      border: 'none',
-      cursor: 'pointer',
-      boxShadow: '0 10px 20px rgba(0,0,0,0.25)',
-      transition: 'all 0.3s ease',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8
+      color: "#fff",
+
+      border: "none",
+      cursor: "pointer",
+      boxShadow: "0 10px 20px rgba(0,0,0,0.25)",
+      transition: "all 0.3s ease",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
     },
     buttonSecondary: {
-      background: 'rgba(255,255,255,0.1)',
-      border: '1px solid rgba(255,255,255,0.25)'
+      background: "rgba(255,255,255,0.1)",
+      border: "1px solid rgba(255,255,255,0.25)",
     },
     buttonDisabled: {
       opacity: 0.5,
-      cursor: 'not-allowed'
+      cursor: "not-allowed",
     },
     loading: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       gap: 8,
       padding: 12,
       borderRadius: 10,
-      background: 'rgba(99,102,241,0.15)',
-      color: 'rgba(255,255,255,0.85)'
+      background: "rgba(99,102,241,0.15)",
+      color: "rgba(255,255,255,0.85)",
     },
     spinner: {
       width: 16,
       height: 16,
-      border: '2px solid rgba(255,255,255,0.25)',
-      borderTop: '2px solid #fff',
-      borderRadius: '50%',
-      animation: 'spin 1s linear infinite'
+      border: "2px solid rgba(255,255,255,0.25)",
+      borderTop: "2px solid #fff",
+      borderRadius: "50%",
+      animation: "spin 1s linear infinite",
     },
     successMessage: {
-      display: 'flex',
-      alignItems: 'center',
+      display: "flex",
+      alignItems: "center",
       gap: 8,
-      padding: '10px 12px',
+      padding: "10px 12px",
       borderRadius: 10,
-      background: 'rgba(34,197,94,0.15)',
-      border: '1px solid rgba(34,197,94,0.4)',
-      color: 'rgb(134,239,172)',
+      background: "rgba(34,197,94,0.15)",
+      border: "1px solid rgba(34,197,94,0.4)",
+      color: "rgb(134,239,172)",
       fontWeight: 600,
-      fontSize: 13
+      fontSize: 13,
     },
     startButton: {
-      width: '100%',
-      padding: '14px 16px',
+      width: "100%",
+      padding: "14px 16px",
       fontWeight: 800,
       borderRadius: 10,
-      color: '#fff',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #3b82f6)',
-      border: 'none',
-      cursor: 'pointer',
-      boxShadow: '0 10px 20px rgba(0,0,0,0.25)',
-      transition: 'all 0.3s ease',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      color: "#fff",
+
+      border: "none",
+      cursor: "pointer",
+      boxShadow: "0 10px 20px rgba(0,0,0,0.25)",
+      transition: "all 0.3s ease",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       gap: 8,
-      fontSize: 16
+      fontSize: 16,
     },
     modalOverlay: {
-      position: 'fixed',
+      position: "fixed",
       top: 0,
       left: 0,
       right: 0,
       bottom: 0,
-      background: 'rgba(0,0,0,0.7)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      background: "rgba(0,0,0,0.7)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
       zIndex: 1000,
-      padding: 16
+      padding: 16,
     },
     modalContent: {
-      background: 'rgba(11,16,32,0.95)',
+      background: "rgba(11,16,32,0.95)",
       borderRadius: 20,
       padding: 24,
       maxWidth: 600,
-      width: '100%',
-      border: '2px solid rgba(99,102,241,0.3)',
-      boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
-      maxHeight: '90vh',
-      overflowY: 'auto'
+      width: "100%",
+      border: "2px solid rgba(99,102,241,0.3)",
+      boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
+      maxHeight: "90vh",
+      overflowY: "auto",
     },
     modalHeader: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 16
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 16,
     },
     modalTitle: {
       fontSize: 20,
-      fontWeight: 800
+      fontWeight: 800,
     },
     closeButton: {
-      background: 'none',
-      border: 'none',
-      color: '#fff',
-      cursor: 'pointer',
+      background: "none",
+      border: "none",
+      color: "#fff",
+      cursor: "pointer",
       padding: 0,
-      display: 'flex',
-      alignItems: 'center'
+      display: "flex",
+      alignItems: "center",
     },
     cameraContainer: {
-      position: 'relative',
+      position: "relative",
       borderRadius: 12,
-      overflow: 'hidden',
-      border: '2px solid rgba(99,102,241,0.5)',
-      background: '#000',
-      aspectRatio: '4/3',
-      marginBottom: 16
+      overflow: "hidden",
+      border: "2px solid rgba(99,102,241,0.5)",
+      background: "#000",
+      aspectRatio: "4/3",
+      marginBottom: 16,
     },
     video: {
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover',
-      display: 'block'
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      display: "block",
     },
     canvas: {
-      display: 'none'
+      display: "none",
     },
     guidingCircle: {
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: 'translate(-50%, -50%)',
-      width: '50%',
-      height: '80%',
-      border: '3px dashed rgba(99,102,241,0.8)',
-      borderRadius: '50%',
-      pointerEvents: 'none',
-      boxShadow: 'inset 0 0 20px rgba(99,102,241,0.2)',
-      zIndex: 2
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: "50%",
+      height: "80%",
+      border: "3px dashed rgba(99,102,241,0.8)",
+      borderRadius: "50%",
+      pointerEvents: "none",
+      boxShadow: "inset 0 0 20px rgba(99,102,241,0.2)",
+      zIndex: 2,
     },
     guidingLabel: {
-      position: 'absolute',
-      top: '10px',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      background: 'rgba(99,102,241,0.9)',
-      padding: '4px 12px',
+      position: "absolute",
+      top: "10px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      background: "rgba(99,102,241,0.9)",
+      padding: "4px 12px",
       borderRadius: 6,
       fontSize: 12,
       fontWeight: 700,
-      whiteSpace: 'nowrap',
-      color: '#fff'
+      whiteSpace: "nowrap",
+      color: "#fff",
     },
     darkenOverlay: {
-      position: 'absolute',
+      position: "absolute",
       top: 0,
       left: 0,
-      width: '100%',
-      height: '100%',
-      background: 'radial-gradient(circle 35% at 50% 50%, transparent 0%, rgba(0,0,0,0.6) 100%)',
-      pointerEvents: 'none',
-      zIndex: 1
+      width: "100%",
+      height: "100%",
+      background:
+        "radial-gradient(circle 35% at 50% 50%, transparent 0%, rgba(0,0,0,0.6) 100%)",
+      pointerEvents: "none",
+      zIndex: 1,
     },
     captureButton: {
-      width: '100%',
-      padding: '14px 16px',
+      width: "100%",
+      padding: "14px 16px",
       fontWeight: 800,
       borderRadius: 10,
-      color: '#fff',
-      background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #3b82f6)',
-      border: 'none',
-      cursor: 'pointer',
-      boxShadow: '0 10px 20px rgba(0,0,0,0.25)',
+      color: "#fff",
+
+      border: "none",
+      cursor: "pointer",
+      boxShadow: "0 10px 20px rgba(0,0,0,0.25)",
       fontSize: 16,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 8
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
     },
     modalButtonGroup: {
-      display: 'flex',
+      display: "flex",
       gap: 12,
-      marginTop: 12
+      marginTop: 12,
     },
     infoBox: {
-      background: 'rgba(99,102,241,0.1)',
-      border: '1px solid rgba(99,102,241,0.3)',
+      background: "rgba(99,102,241,0.1)",
+      border: "1px solid rgba(99,102,241,0.3)",
       borderRadius: 10,
       padding: 12,
       marginTop: 12,
       fontSize: 12,
-      color: 'rgba(255,255,255,0.75)',
-      lineHeight: 1.6
-    }
+      color: "rgba(255,255,255,0.75)",
+      lineHeight: 1.6,
+    },
   };
   const [searchParams] = useSearchParams();
   const session_id = searchParams.get("session_id");
@@ -272,7 +274,7 @@ export default function CandidatePhotoCapture() {
 
   useEffect(() => {
     const isAadhaarVerified = localStorage.getItem("isaadhaarcard"); // returns string or null [web:33]
-    console.log(isAadhaarVerified,"isAadhaarVerified");
+    console.log(isAadhaarVerified, "isAadhaarVerified");
     if (isAadhaarVerified !== "true") {
       // not verified, redirect to Aadhaar capture
       navigate(`/aadhaar?session_id=${session_id}`);
@@ -282,8 +284,8 @@ export default function CandidatePhotoCapture() {
     return () => {
       stopCamera();
     };
-  }, [navigate, session_id]); 
-  
+  }, [navigate, session_id]);
+
   // useEffect(() => {
   //   return () => {
   //     stopCamera();
@@ -292,7 +294,7 @@ export default function CandidatePhotoCapture() {
 
   const stopCamera = () => {
     if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
     }
   };
 
@@ -300,17 +302,17 @@ export default function CandidatePhotoCapture() {
     try {
       setError("");
       setShowModal(true);
-      
+
       setTimeout(async () => {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
             video: {
-              facingMode: 'user',
+              facingMode: "user",
               width: { ideal: 1280 },
-              height: { ideal: 960 }
-            }
+              height: { ideal: 960 },
+            },
           });
-          
+
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
           }
@@ -340,18 +342,30 @@ export default function CandidatePhotoCapture() {
       const startY = (videoHeight - size) / 2;
 
       // Create a temporary canvas for the circular image with transparency
-      const tempCanvas = document.createElement('canvas');
+      const tempCanvas = document.createElement("canvas");
       tempCanvas.width = size;
       tempCanvas.height = size;
-      const tempContext = tempCanvas.getContext('2d', { willReadFrequently: true });
+      const tempContext = tempCanvas.getContext("2d", {
+        willReadFrequently: true,
+      });
 
       // Draw video frame
-      tempContext.drawImage(video, startX, startY, size, size, 0, 0, size, size);
+      tempContext.drawImage(
+        video,
+        startX,
+        startY,
+        size,
+        size,
+        0,
+        0,
+        size,
+        size
+      );
 
       // Create circular clipping and apply it
       const radius = size / 2;
       tempContext.save();
-      tempContext.globalCompositeOperation = 'destination-in';
+      tempContext.globalCompositeOperation = "destination-in";
       tempContext.beginPath();
       tempContext.arc(radius, radius, radius, 0, Math.PI * 2);
       tempContext.fill();
@@ -359,17 +373,27 @@ export default function CandidatePhotoCapture() {
 
       // Create a new canvas with only the circular portion (cropped to circle bounds)
       const circleSize = Math.round(size * 0.95);
-      const finalCanvas = document.createElement('canvas');
+      const finalCanvas = document.createElement("canvas");
       finalCanvas.width = circleSize;
       finalCanvas.height = circleSize;
-      const finalContext = finalCanvas.getContext('2d');
+      const finalContext = finalCanvas.getContext("2d");
 
       const offset = (size - circleSize) / 2;
-      finalContext.drawImage(tempCanvas, offset, offset, circleSize, circleSize, 0, 0, circleSize, circleSize);
+      finalContext.drawImage(
+        tempCanvas,
+        offset,
+        offset,
+        circleSize,
+        circleSize,
+        0,
+        0,
+        circleSize,
+        circleSize
+      );
 
       // Convert to PNG to preserve transparency, but we'll convert to JPEG in handleSubmit with white background
-      const imageData = finalCanvas.toDataURL('image/png');
-      
+      const imageData = finalCanvas.toDataURL("image/png");
+
       setCapturedImage(imageData);
       stopCamera();
       setShowModal(false);
@@ -386,7 +410,6 @@ export default function CandidatePhotoCapture() {
     await startCamera();
   };
 
-
   const handleSubmit = async () => {
     if (!capturedImage) {
       setError("Please capture an image first");
@@ -397,43 +420,54 @@ export default function CandidatePhotoCapture() {
     setError("");
 
     try {
-      const candidate_id = localStorage.getItem("candidate_id")
-      const candidate_name = localStorage.getItem("candidate_name")
-      
+      const candidate_id = localStorage.getItem("candidate_id");
+      const candidate_name = localStorage.getItem("candidate_name");
+
       // Convert PNG with transparency to circular JPEG
       const img = new Image();
       img.onload = async () => {
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = img.width;
         canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
 
         // Draw white background
-        ctx.fillStyle = '#FFFFFF';
+        ctx.fillStyle = "#FFFFFF";
         ctx.fillRect(0, 0, img.width, img.height);
 
         // Draw the circular image on top
         ctx.drawImage(img, 0, 0);
 
         // Convert to blob and upload
-        canvas.toBlob(async (blob) => {
-          const formData = new FormData();
-          formData.append("file", blob, "photo.jpg");
-          formData.append("candidate_id", candidate_id);
-          console.log(formData,"formDataformData");
-          
-          try {
-            const data = await postForm("/aadhaarcard/upload-candidate-image/", formData);
-            setSuccess(true);
-            setTimeout(() => setSuccess(false), 3000);
-            localStorage.setItem("iscandidatephoto", "true");
-            navigate(`/proctoring?session_id=${localStorage.getItem("session_id")}`);
-            // navigate("/proctoring");
-          } catch (err) {
-            setError(err.message || "Failed to upload photo. Please try again.");
-            setIsLoading(false);
-          }
-        }, 'image/jpeg', 0.95);
+        canvas.toBlob(
+          async (blob) => {
+            const formData = new FormData();
+            formData.append("file", blob, "photo.jpg");
+            formData.append("candidate_id", candidate_id);
+            console.log(formData, "formDataformData");
+
+            try {
+              const data = await postForm(
+                "/aadhaarcard/upload-candidate-image/",
+                formData
+              );
+              setSuccess(true);
+              setTimeout(() => setSuccess(false), 3000);
+              localStorage.setItem("iscandidatephoto", "true");
+              navigate(
+                `/proctoring?session_id=${localStorage.getItem("session_id")}`
+              );
+              // navigate("/proctoring");
+            } catch (err) {
+              setError(
+                err.message || "Failed to upload photo. Please try again."
+              );
+              setIsLoading(false);
+            }
+          },
+          "image/jpeg",
+          0.95
+        );
       };
       img.src = capturedImage;
     } catch (err) {
@@ -443,31 +477,45 @@ export default function CandidatePhotoCapture() {
   };
 
   return (
-    <div style={styles.page}>
-      <style>{`
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-      
-      <img 
-        src="/PRAGYAN.AI-logo-dark.svg" 
-        height={140} 
-        width={280} 
-        style={styles.logo}
+    <div
+      className="
+   min-h-screen bg-[#0B0F1A] flex flex-col items-center justify-center relative overflow-hidden px-4"
+    >
+      <SparklesBackground />
+      <img
+        src="/PRAGYAN.AI-logo-dark.svg"
+        height={140}
+        width={280}
         alt="PRAGYAN.AI Logo"
+        className="mb-4"
       />
 
-      <div style={styles.card}>
-        <div style={styles.header}>
-          <h2 style={styles.title}> Candidate Photo</h2>
-          <p style={styles.subtitle}>Capture a clear frontal photo for candidate verification</p>
+      <div
+        className="
+    w-full max-w-[540px]
+    bg-white/10   
+    rounded-2xl p-6
+     
+    flex flex-col gap-4
+  "
+      >
+        <div className="mb-2">
+          <h2 className="text-2xl font-extrabold mb-1 text-white">
+            Candidate Photo
+          </h2>
+          <p className="text-sm text-white/85">
+            Capture a clear frontal photo for candidate verification
+          </p>
         </div>
 
         <canvas ref={canvasRef} style={styles.canvas}></canvas>
 
         {!capturedImage && (
-          <button style={styles.startButton} onClick={startCamera}>
+          <button
+            style={styles.startButton}
+            onClick={startCamera}
+            className="gradient-primary"
+          >
             <Camera size={20} />
             Capture Photo
           </button>
@@ -475,7 +523,17 @@ export default function CandidatePhotoCapture() {
 
         {capturedImage && (
           <div>
-            <img src={capturedImage} alt="Captured" style={styles.preview} />
+            <img
+              src={capturedImage}
+              alt="Captured"
+              className="
+    w-[260px] h-[260px]
+    rounded-full object-cover
+    border-[3px] border-indigo-500
+    bg-[#0b1020]
+    mx-auto mb-3
+  "
+            />
             {success && (
               <div style={styles.successMessage}>
                 <CheckCircle size={18} />
@@ -487,11 +545,12 @@ export default function CandidatePhotoCapture() {
                 style={styles.button}
                 onClick={handleSubmit}
                 disabled={isLoading}
+                className="gradient-primary"
               >
                 {isLoading ? "⏳ Uploading..." : "✓ Confirm Photo"}
               </button>
               <button
-                style={{...styles.button, ...styles.buttonSecondary}}
+                style={{ ...styles.button, ...styles.buttonSecondary }}
                 onClick={handleRetake}
                 disabled={isLoading}
               >
@@ -503,14 +562,16 @@ export default function CandidatePhotoCapture() {
         )}
 
         {error && (
-          <div style={{
-            color: 'rgb(252,165,165)',
-            background: 'rgba(239,68,68,0.12)',
-            border: '1px solid rgba(248,113,113,0.35)',
-            borderRadius: 10,
-            padding: '8px 12px',
-            fontSize: 13
-          }}>
+          <div
+            style={{
+              color: "rgb(252,165,165)",
+              background: "rgba(239,68,68,0.12)",
+              border: "1px solid rgba(248,113,113,0.35)",
+              borderRadius: 10,
+              padding: "8px 12px",
+              fontSize: 13,
+            }}
+          >
             {error}
           </div>
         )}
@@ -522,54 +583,137 @@ export default function CandidatePhotoCapture() {
           </div>
         )}
 
-        <div style={styles.infoBox}>
-          <strong> Requirements:</strong>
-          <ul style={{ marginTop: 8, paddingLeft: 16 }}>
-            <li>Clear frontal face photo</li>
-            <li>Good lighting and no shadows</li>
-            <li>Face should occupy 70% of frame</li>
-            <li>Neutral background preferred</li>
+        <div
+          className="
+    mt-4 rounded-xl
+    bg-indigo-500/10
+    border border-indigo-500/30
+    p-4
+    text-white/80
+  "
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-indigo-400 text-sm font-semibold">
+              Requirements
+            </span>
+          </div>
+
+          <ul className="space-y-1 text-sm">
+            {[
+              "Clear frontal face photo",
+              "Good lighting and no shadows",
+              "Face should occupy at least 70% of the frame",
+              "Neutral background preferred",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="text-red-400 mt-0.5">✔</span>
+                <span>{item}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
 
       {showModal && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modalContent}>
-            <div style={styles.modalHeader}>
-              <h3 style={styles.modalTitle}> Position Your Face</h3>
+        <div className="fixed inset-0 z-[1000] bg-black/70 flex items-center justify-center p-4">
+          {/* Modal Content */}
+          <div
+            className="
+      w-full max-w-[600px]
+      bg-white/10
+      
+      rounded-2xl p-6
+      shadow-[0_25px_50px_rgba(0,0,0,0.5)]
+      max-h-[90vh] overflow-y-auto
+    "
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-extrabold text-white">
+                Position Your Face
+              </h3>
               <button
-                style={styles.closeButton}
                 onClick={() => {
                   setShowModal(false);
                   stopCamera();
                 }}
+                className="text-white/80 hover:text-white transition"
               >
                 <X size={24} />
               </button>
             </div>
 
-            <div style={styles.cameraContainer}>
+            {/* Camera Container */}
+            <div
+              className="
+        relative aspect-[4/3]
+        rounded-xl overflow-hidden
+        border-2 border-indigo-500/50
+        bg-black mb-4
+      "
+            >
               <video
                 ref={videoRef}
-                style={styles.video}
                 autoPlay
                 playsInline
                 muted
+                className="w-full h-full object-cover scale-x-[-1]"
               />
-              <div style={styles.darkenOverlay}></div>
-              <div style={styles.guidingCircle}>
-                <div style={styles.guidingLabel}>Position face here</div>
+
+              {/* Dark overlay */}
+              <div
+                className="
+          absolute inset-0 z-10 pointer-events-none
+           
+        "
+              />
+
+              {/* Guiding Circle */}
+              <div
+                className="
+          absolute top-1/2 left-1/2
+          -translate-x-1/2 -translate-y-1/2
+          w-1/2 h-[80%]
+          rounded-full
+          border-[3px] border-dashed border-indigo-500
+           
+          pointer-events-none z-20
+        "
+              >
+                <div
+                  className="
+            absolute top-2 left-1/2 -translate-x-1/2
+            bg-indigo-500
+            px-3 py-1
+            rounded-md
+            text-xs font-bold text-white
+            whitespace-nowrap
+          "
+                >
+                  Position face here
+                </div>
               </div>
             </div>
 
-            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 13, marginBottom: 12, textAlign: 'center' }}>
-              Look directly at the camera and click "Capture Photo"
+            {/* Instruction Text */}
+            <p className="text-white/75 text-sm text-center mb-3">
+              Look directly at the camera and click{" "}
+              <span className="font-semibold">Capture Photo</span>
             </p>
 
+            {/* Capture Button */}
             <button
-              style={styles.captureButton}
               onClick={capturePhoto}
+              className="
+        w-full flex items-center justify-center gap-2
+        px-4 py-3 rounded-sm
+        font-extrabold text-white
+        gradient-primary
+        shadow-lg
+        transition-all duration-300
+        cursor-pointer
+        active:scale-[0.97]
+      "
             >
               <Camera size={20} />
               Capture Photo

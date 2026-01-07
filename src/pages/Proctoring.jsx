@@ -8,67 +8,125 @@ import useTabViolationDetection from "../hooks/useTabViolationDetection";
 import { postForm } from "../utils/api";
 import { useSearchParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
+import SparklesBackground from "../components/BackGround";
 
-
-const API_BASE=import.meta.env.VITE_API_BASE_URL
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 export default function Proctoring() {
-  const [isNarrow, setIsNarrow] = useState(typeof window !== 'undefined' ? window.innerWidth < 900 : false);
+  const [isNarrow, setIsNarrow] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 900 : false
+  );
   useEffect(() => {
     window.history.replaceState(null, "", window.location.href);
   }, []);
-  
+
   useEffect(() => {
     function onResize() {
       setIsNarrow(window.innerWidth < 900);
     }
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
   }, []);
 
   const styles = {
     // Page chrome
     container: {
-      minHeight: '100vh',
-      width: '100vw',
-      display: 'flex',
-      flexDirection: 'column',
-      background: 'linear-gradient(180deg, #0b1020 0%, #0b1426 40%, #0e182e 100%)',
-      color: '#fff',
-      position: 'relative',
-      overflow: 'hidden'
+      minHeight: "100vh",
+      width: "100vw",
+      display: "flex",
+      flexDirection: "column",
+      background:
+        "linear-gradient(180deg, #0b1020 0%, #0b1426 40%, #0e182e 100%)",
+      color: "#fff",
+      position: "relative",
+      overflow: "hidden",
     },
-    glowA: { position: 'absolute', top: -120, left: -80, width: 480, height: 480, borderRadius: '50%', filter: 'blur(80px)', background: 'radial-gradient(circle at 30% 30%, rgba(99,102,241,0.25), transparent 60%)', pointerEvents: 'none' },
-    glowB: { position: 'absolute', top: -80, right: -120, width: 520, height: 520, borderRadius: '50%', filter: 'blur(90px)', background: 'radial-gradient(circle at 70% 30%, rgba(168,85,247,0.22), transparent 60%)', pointerEvents: 'none' },
-    glowC: { position: 'absolute', bottom: -140, left: '20%', width: 600, height: 600, borderRadius: '50%', filter: 'blur(100px)', background: 'radial-gradient(circle at 50% 50%, rgba(59,130,246,0.18), transparent 60%)', pointerEvents: 'none' },
+    glowA: {
+      position: "absolute",
+      top: -120,
+      left: -80,
+      width: 480,
+      height: 480,
+      borderRadius: "50%",
+      filter: "blur(80px)",
+      background:
+        "radial-gradient(circle at 30% 30%, rgba(99,102,241,0.25), transparent 60%)",
+      pointerEvents: "none",
+    },
+    glowB: {
+      position: "absolute",
+      top: -80,
+      right: -120,
+      width: 520,
+      height: 520,
+      borderRadius: "50%",
+      filter: "blur(90px)",
+      background:
+        "radial-gradient(circle at 70% 30%, rgba(168,85,247,0.22), transparent 60%)",
+      pointerEvents: "none",
+    },
+    glowC: {
+      position: "absolute",
+      bottom: -140,
+      left: "20%",
+      width: 600,
+      height: 600,
+      borderRadius: "50%",
+      filter: "blur(100px)",
+      background:
+        "radial-gradient(circle at 50% 50%, rgba(59,130,246,0.18), transparent 60%)",
+      pointerEvents: "none",
+    },
     header: {
-      padding: '16px 24px',
-      borderBottom: '1px solid rgba(255,255,255,0.08)'
+      padding: "16px 24px",
+      borderBottom: "1px solid rgba(255,255,255,0.08)",
     },
-    headerBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-    headerTitle: { fontSize: 18, fontWeight: 800, letterSpacing: 0.4, background: 'linear-gradient(90deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' },
+    headerBar: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    headerTitle: {
+      fontSize: 18,
+      fontWeight: 800,
+      letterSpacing: 0.4,
+      background: "linear-gradient(90deg, #a78bfa, #60a5fa)",
+      WebkitBackgroundClip: "text",
+      backgroundClip: "text",
+      color: "transparent",
+    },
     layout: {
-      display: 'grid',
-      gridTemplateColumns: isNarrow ? '1fr' : '1.2fr 1fr',
+      display: "grid",
+      gridTemplateColumns: isNarrow ? "1fr" : "1.2fr 1fr",
       gap: 16,
       padding: 16,
       flex: 1,
       minHeight: 0,
-      alignItems: 'stretch'
+      alignItems: "stretch",
     },
-    leftPanel: { display: 'flex', flexDirection: 'column', gap: 16, minHeight: 0 },
-    rightPanel: { display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 },
+    leftPanel: {
+      display: "flex",
+      flexDirection: "column",
+      gap: 16,
+      minHeight: 0,
+    },
+    rightPanel: {
+      display: "flex",
+      flexDirection: "column",
+      height: "100%",
+      minHeight: 0,
+    },
     panel: {
-      background: 'rgba(255,255,255,0.08)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      border: '1px solid rgba(255,255,255,0.12)',
+      background: "rgba(255,255,255,0.08)",
+      backdropFilter: "blur(12px)",
+      WebkitBackdropFilter: "blur(12px)",
+      border: "1px solid rgba(255,255,255,0.12)",
       borderRadius: 16,
       padding: 28,
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      color: '#fff',
-      boxShadow: '0 20px 40px rgba(0,0,0,0.35)'
+      display: "flex",
+      flexDirection: "column",
+      height: "100%",
+      color: "#fff",
+      boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
     },
     title: { fontSize: 22, fontWeight: 800, marginBottom: 20 },
     stack: { display: "flex", flexDirection: "column", gap: 16 },
@@ -84,84 +142,194 @@ export default function Proctoring() {
     statusPass: { color: "#4ade80", fontSize: 18, fontWeight: 600 },
     statusFail: { color: "#f87171", fontSize: 18, fontWeight: 600 },
     statusUnknown: { color: "#ffffff", fontSize: 18, fontWeight: 600 },
-    actions: { display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 },
-    btnBase: { padding: '10px 14px', fontWeight: 700, borderRadius: 10, color: '#fff', boxShadow: '0 8px 18px rgba(0,0,0,0.25)', border: 'none', cursor: 'pointer' },
-    btnPrimary: { padding: '12px 18px', fontWeight: 800, borderRadius: 12, color: '#fff', background: 'linear-gradient(135deg, #6366f1, #8b5cf6, #3b82f6)', border: 'none', boxShadow: '0 12px 24px rgba(59,130,246,0.25)', cursor: 'pointer', fontSize: 16 },
-    btnSecondary: { padding: '10px 14px', fontWeight: 700, borderRadius: 10, color: '#fff', background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.22)', boxShadow: '0 8px 18px rgba(0,0,0,0.25)', cursor: 'pointer' },
-    btnSuccess: { padding: '10px 14px', fontWeight: 800, borderRadius: 10, color: '#fff', background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', boxShadow: '0 12px 24px rgba(16,163,74,0.25)', cursor: 'pointer' },
-    list: { flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 },
-    listItem: { padding: 16, background: "rgba(255,255,255,0.05)", borderRadius: 8 },
+    actions: {
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: 12,
+      marginTop: 24,
+    },
+    btnBase: {
+      padding: "10px 14px",
+      fontWeight: 700,
+      borderRadius: 10,
+      color: "#fff",
+      boxShadow: "0 8px 18px rgba(0,0,0,0.25)",
+      border: "none",
+      cursor: "pointer",
+    },
+    btnPrimary: {
+      padding: "12px 18px",
+      fontWeight: 800,
+      borderRadius: 12,
+      color: "#fff",
+      background: "linear-gradient(135deg, #6366f1, #8b5cf6, #3b82f6)",
+      border: "none",
+      boxShadow: "0 12px 24px rgba(59,130,246,0.25)",
+      cursor: "pointer",
+      fontSize: 16,
+    },
+    btnSecondary: {
+      padding: "10px 14px",
+      fontWeight: 700,
+      borderRadius: 10,
+      color: "#fff",
+      background: "rgba(255,255,255,0.18)",
+      border: "1px solid rgba(255,255,255,0.22)",
+      boxShadow: "0 8px 18px rgba(0,0,0,0.25)",
+      cursor: "pointer",
+    },
+    btnSuccess: {
+      padding: "10px 14px",
+      fontWeight: 800,
+      borderRadius: 10,
+      color: "#fff",
+      background: "linear-gradient(135deg, #22c55e, #16a34a)",
+      border: "none",
+      boxShadow: "0 12px 24px rgba(16,163,74,0.25)",
+      cursor: "pointer",
+    },
+    list: {
+      flex: 1,
+      overflow: "auto",
+      display: "flex",
+      flexDirection: "column",
+      gap: 12,
+      marginBottom: 24,
+    },
+    listItem: {
+      padding: 16,
+      background: "rgba(255,255,255,0.05)",
+      borderRadius: 8,
+    },
     listItemTitle: { fontWeight: 600 },
-    listItemMeta: { fontSize: 14, color: "rgba(255,255,255,0.8)", marginTop: 4 },
-    smallBadge: { display: "inline-block", marginTop: 8, fontSize: 12, padding: "4px 8px", background: "rgba(234,179,8,0.7)", borderRadius: 6 },
+    listItemMeta: {
+      fontSize: 14,
+      color: "rgba(255,255,255,0.8)",
+      marginTop: 4,
+    },
+    smallBadge: {
+      display: "inline-block",
+      marginTop: 8,
+      fontSize: 12,
+      padding: "4px 8px",
+      background: "rgba(234,179,8,0.7)",
+      borderRadius: 6,
+    },
     mt12: { marginTop: 12 },
     mb16: { marginBottom: 16 },
     // Loading state
-    loadingContainer: { display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px', flexDirection: 'column', gap: 16 },
-    loadingSpinner: { width: 40, height: 40, border: '3px solid rgba(255,255,255,0.3)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' },
+    loadingContainer: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      height: "200px",
+      flexDirection: "column",
+      gap: 16,
+    },
+    loadingSpinner: {
+      width: 40,
+      height: 40,
+      border: "3px solid rgba(255,255,255,0.3)",
+      borderTop: "3px solid #6366f1",
+      borderRadius: "50%",
+      animation: "spin 1s linear infinite",
+    },
     // Error state
-    errorContainer: { padding: 20, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, marginBottom: 16 },
-    errorText: { color: '#f87171', marginBottom: 12 },
+    errorContainer: {
+      padding: 20,
+      background: "rgba(239,68,68,0.1)",
+      border: "1px solid rgba(239,68,68,0.3)",
+      borderRadius: 8,
+      marginBottom: 16,
+    },
+    errorText: { color: "#f87171", marginBottom: 12 },
     // Disqualified overlay
-    overlay: { position: "fixed", inset: 0, zIndex: 50, background: "rgba(0,0,0,0.80)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 },
-    overlayCard: { background: "rgba(220,38,38,0.92)", color: "#fff", maxWidth: 520, width: "100%", borderRadius: 16, padding: 28, textAlign: "center", boxShadow: "0 20px 40px rgba(0,0,0,0.35)" },
+    overlay: {
+      position: "fixed",
+      inset: 0,
+      zIndex: 50,
+      background: "rgba(0,0,0,0.80)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 24,
+    },
+    overlayCard: {
+      background: "rgba(220,38,38,0.92)",
+      color: "#fff",
+      maxWidth: 520,
+      width: "100%",
+      borderRadius: 16,
+      padding: 28,
+      textAlign: "center",
+      boxShadow: "0 20px 40px rgba(0,0,0,0.35)",
+    },
     overlayTitle: { fontSize: 22, fontWeight: 700, marginBottom: 8 },
-    overlayBtn: { padding: '10px 14px', fontWeight: 700, borderRadius: 10, color: '#fff', background: 'rgba(255,255,255,0.20)', border: '1px solid rgba(255,255,255,0.22)', cursor: 'pointer' },
+    overlayBtn: {
+      padding: "10px 14px",
+      fontWeight: 700,
+      borderRadius: 10,
+      color: "#fff",
+      background: "rgba(255,255,255,0.20)",
+      border: "1px solid rgba(255,255,255,0.22)",
+      cursor: "pointer",
+    },
     // Pre-test screen styles
     preTestContainer: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      textAlign: 'center',
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
       flex: 1,
-      gap: 24
+      gap: 24,
     },
     preTestTitle: {
       fontSize: 28,
       fontWeight: 800,
       marginBottom: 16,
-      background: 'linear-gradient(90deg, #a78bfa, #60a5fa)',
-      WebkitBackgroundClip: 'text',
-      backgroundClip: 'text',
-      color: 'transparent'
+      background: "linear-gradient(90deg, #a78bfa, #60a5fa)",
+      WebkitBackgroundClip: "text",
+      backgroundClip: "text",
+      color: "transparent",
     },
     preTestDescription: {
       fontSize: 16,
       lineHeight: 1.6,
-      color: 'rgba(255,255,255,0.8)',
+      color: "rgba(255,255,255,0.8)",
       maxWidth: 600,
       marginBottom: 8,
-      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif'
+      fontFamily:
+        'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
     },
     preTestStats: {
-      display: 'flex',
+      display: "flex",
       gap: 24,
-      marginBottom: 32
+      marginBottom: 32,
     },
     statItem: {
-      textAlign: 'center'
+      textAlign: "center",
     },
     statNumber: {
       fontSize: 24,
       fontWeight: 800,
-      color: '#60a5fa',
-      display: 'block'
+      color: "#60a5fa",
+      display: "block",
     },
     statLabel: {
       fontSize: 14,
-      color: 'rgba(255,255,255,0.7)',
+      color: "rgba(255,255,255,0.7)",
       marginTop: 4,
-      fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif'
-
-    }
+      fontFamily:
+        'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+    },
   };
   const [searchParams] = useSearchParams();
   const session_id = searchParams.get("session_id");
   const [questions, setQuestions] = useState([]);
   const [questionsLoading, setQuestionsLoading] = useState(true);
   const [questionsError, setQuestionsError] = useState(null);
-  const [jdId, setJdId] = useState(""); 
+  const [jdId, setJdId] = useState("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [popupMessage, setPopupMessage] = useState("");
   const [popupVisible, setPopupVisible] = useState(false);
@@ -174,33 +342,30 @@ export default function Proctoring() {
   const [reviewItems, setReviewItems] = useState([]);
   const [disqualified, setDisqualified] = useState(false);
   const [screenRecordingStarted, setScreenRecordingStarted] = useState(false);
-  
 
   const [testStarted, setTestStarted] = useState(false);
-  
+
   const { violationCount } = useTabViolationDetection();
 
   const navigate = useNavigate();
   const screenShareRef = useRef(null);
 
   useEffect(() => {
-    const isAadhaarVerified = localStorage.getItem("isaadhaarcard"); 
+    const isAadhaarVerified = localStorage.getItem("isaadhaarcard");
     const isCandidatePhotoVerified = localStorage.getItem("iscandidatephoto");
     const isSessionIdVerified = localStorage.getItem("session_id");
     if (!isSessionIdVerified) {
       navigate(`/`);
       return;
-    }
-    else if (isAadhaarVerified !== "true") {
+    } else if (isAadhaarVerified !== "true") {
       navigate(`/aadhaar?session_id=${session_id}`);
       return;
-    }
-    else if (isCandidatePhotoVerified !== "true") {
+    } else if (isCandidatePhotoVerified !== "true") {
       navigate(`/candidatephoto?session_id=${session_id}`);
       return;
     }
-  }, [navigate, session_id]); 
-  
+  }, [navigate, session_id]);
+
   async function fetchQuestions(jdId) {
     if (!jdId) {
       setQuestionsError("No job description ID provided");
@@ -211,42 +376,43 @@ export default function Proctoring() {
     try {
       setQuestionsLoading(true);
       setQuestionsError(null);
-      
-      const response = await fetch(`${API_BASE}/testquestions/qa_test/${jdId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+
+      const response = await fetch(
+        `${API_BASE}/testquestions/qa_test/${jdId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log(data,"data12345");
+      console.log(data, "data12345");
       // if (data.status_code === 200 && data.data) {
       //   setQuestions(data.data);
       //   if (data.data.length === 0) {
       //     setQuestionsError("No questions found for this job description");
       //   }
-      // } 
+      // }
       if (data.status_code === 200 && data.data) {
         const normalizedQuestions = data.data.map((q) => ({
           _id: q.question_id,
           question: q.question_text,
           expected_answer: q.answers?.[0]?.answer_text || "",
-          answers: q.answers || []   // optional (future use)
+          answers: q.answers || [], // optional (future use)
         }));
-      
+
         setQuestions(normalizedQuestions);
-      
+
         if (normalizedQuestions.length === 0) {
           setQuestionsError("No questions found for this job description");
         }
-      }
-      
-       else {
+      } else {
         throw new Error(data.message || "Failed to fetch questions");
       }
     } catch (error) {
@@ -285,9 +451,11 @@ export default function Proctoring() {
     setCandidateName(name);
     setCandidateId(id);
     setJdId(jobDescriptionId);
-    
+
     if (!sid) {
-      sid = `${id || 'CAND'}-${Math.random().toString(36).slice(2, 8)}-${Date.now()}`;
+      sid = `${id || "CAND"}-${Math.random()
+        .toString(36)
+        .slice(2, 8)}-${Date.now()}`;
       localStorage.setItem("session_id", sid);
     }
     setSessionId(sid);
@@ -342,12 +510,12 @@ export default function Proctoring() {
     try {
       navigate(`/report?session_id=${localStorage.getItem("session_id")}`);
     } catch (err) {
-      alert(err.message || 'Failed to get report');
+      alert(err.message || "Failed to get report");
     }
   }
 
   useEffect(() => {
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       @keyframes spin {
         0% { transform: rotate(0deg); }
@@ -393,7 +561,7 @@ export default function Proctoring() {
             <button style={styles.btnPrimary} onClick={retryFetchQuestions}>
               Retry Loading Questions
             </button>
-            <button style={styles.btnSecondary} onClick={() => navigate('/')}>
+            <button style={styles.btnSecondary} onClick={() => navigate("/")}>
               Go Home
             </button>
           </div>
@@ -407,8 +575,9 @@ export default function Proctoring() {
           <div style={styles.preTestContainer}>
             <h2 style={styles.preTestTitle}>Ready to Begin?</h2>
             <p style={styles.preTestDescription}>
-              Welcome to your assessment! This test contains voice-based questions that will evaluate your skills and knowledge. 
-              Make sure you're in a quiet environment with a working microphone.
+              Welcome to your assessment! This test contains voice-based
+              questions that will evaluate your skills and knowledge. Make sure
+              you're in a quiet environment with a working microphone.
             </p>
             <div style={styles.preTestStats}>
               <div style={styles.statItem}>
@@ -424,20 +593,24 @@ export default function Proctoring() {
                 <div style={styles.statLabel}>Proctored</div>
               </div>
             </div>
-            <button 
-              // style={styles.btnPrimary}
-              style={{
-                ...styles.btnPrimary,
-                opacity: screenRecordingStarted ? 1 : 0.5,
-                cursor: screenRecordingStarted ? "pointer" : "not-allowed"
-              }}
-              disabled={!screenRecordingStarted}
+            <button
               onClick={handleStartTest}
+              disabled={!screenRecordingStarted}
+              className={`
+    px-4 py-2 rounded-lg font-semibold text-white transition
+    ${
+      screenRecordingStarted
+        ? "bg-gradient-to-r from-green-500 to-green-600 hover:brightness-110 cursor-pointer"
+        : "bg-gradient-to-r from-red-500 to-red-600 cursor-not-allowed opacity-70"
+    }
+  `}
             >
               Let's Start
             </button>
+
             <p style={styles.preTestDescription}>
-              Once you start, the test will begin immediately. Make sure you're ready!
+              Once you start, the test will begin immediately. Make sure you're
+              ready!
             </p>
           </div>
         </div>
@@ -453,29 +626,47 @@ export default function Proctoring() {
             let status = null;
             const payload = finalResult;
 
-            const asObj = (val) => (val && typeof val === 'object' ? val : null);
+            const asObj = (val) =>
+              val && typeof val === "object" ? val : null;
             const obj = asObj(payload);
 
             if (obj) {
-              const rawStatus = obj.pass ?? obj.passed ?? obj.result ?? obj.status ?? null;
-              if (typeof rawStatus === 'boolean') status = rawStatus ? 'Pass' : 'Fail';
-              else if (typeof rawStatus === 'string') {
+              const rawStatus =
+                obj.pass ?? obj.passed ?? obj.result ?? obj.status ?? null;
+              if (typeof rawStatus === "boolean")
+                status = rawStatus ? "Pass" : "Fail";
+              else if (typeof rawStatus === "string") {
                 const s = rawStatus.toLowerCase();
-                status = s.includes('pass') ? 'Pass' : (s.includes('fail') ? 'Fail' : null);
+                status = s.includes("pass")
+                  ? "Pass"
+                  : s.includes("fail")
+                  ? "Fail"
+                  : null;
               }
-            } else if (typeof payload === 'string') {
+            } else if (typeof payload === "string") {
               const s = payload.toLowerCase();
-              if (s.includes('pass') || s.includes('passed')) status = 'Pass';
-              else if (s.includes('fail') || s.includes('failed')) status = 'Fail';
+              if (s.includes("pass") || s.includes("passed")) status = "Pass";
+              else if (s.includes("fail") || s.includes("failed"))
+                status = "Fail";
             }
 
-            if (status == null) status = 'Unknown';
+            if (status == null) status = "Unknown";
 
             return (
               <div style={styles.stack}>
                 <div style={styles.row}>
                   <span style={styles.rowLabel}>Overall Status</span>
-                  <span style={status === 'Pass' ? styles.statusPass : status === 'Fail' ? styles.statusFail : styles.statusUnknown}>{status}</span>
+                  <span
+                    style={
+                      status === "Pass"
+                        ? styles.statusPass
+                        : status === "Fail"
+                        ? styles.statusFail
+                        : styles.statusUnknown
+                    }
+                  >
+                    {status}
+                  </span>
                 </div>
               </div>
             );
@@ -483,8 +674,12 @@ export default function Proctoring() {
 
           <div style={styles.actions}>
             {/* <button style={styles.btnPrimary} onClick={refetchResult}>Get Result</button> */}
-            <button style={styles.btnPrimary} onClick={refetchReport}>Get Report</button>
-            <button style={styles.btnSecondary} onClick={() => navigate('/')}>Home</button>
+            <button style={styles.btnPrimary} onClick={refetchReport}>
+              Get Report
+            </button>
+            <button style={styles.btnSecondary} onClick={() => navigate("/")}>
+              Home
+            </button>
           </div>
         </div>
       );
@@ -502,17 +697,19 @@ export default function Proctoring() {
                 <li key={item.question_id} style={styles.listItem}>
                   <div style={styles.listItemTitle}>Q: {item.question}</div>
                   {item.user_answer && (
-                    <div style={styles.listItemMeta}>Your answer: {item.user_answer}</div>
+                    <div style={styles.listItemMeta}>
+                      Your answer: {item.user_answer}
+                    </div>
                   )}
-                  {item.edited && (
-                    <span style={styles.smallBadge}>edited</span>
-                  )}
+                  {item.edited && <span style={styles.smallBadge}>edited</span>}
 
                   <div style={styles.mt12}>
                     <button
                       style={styles.btnPrimary}
                       onClick={() => {
-                        const idx = questions.findIndex((q) => q._id === item.question_id);
+                        const idx = questions.findIndex(
+                          (q) => q._id === item.question_id
+                        );
                         if (idx >= 0) setCurrentQuestionIndex(idx);
                         setIsReviewMode(false);
                       }}
@@ -525,62 +722,66 @@ export default function Proctoring() {
             </ul>
           )}
           <div style={styles.actions}>
-            <button style={styles.btnSecondary} onClick={() => setIsReviewMode(false)}>Back</button>
-            <button style={styles.btnSuccess} onClick={finalizeSubmission}>Submit Final</button>
+            <button
+              style={styles.btnSecondary}
+              onClick={() => setIsReviewMode(false)}
+            >
+              Back
+            </button>
+            <button style={styles.btnSuccess} onClick={finalizeSubmission}>
+              Submit Final
+            </button>
           </div>
         </div>
       );
     }
 
     return (
-//       <QuestionBox
-//   question={questions[currentQuestionIndex]}
-//   index={currentQuestionIndex}
-//   onNext={nextQuestion}
-//   candidateId={candidateId}
-//   candidateName={candidateName}
-//   sessionId={sessionId}
-//   isLastQuestion={currentQuestionIndex === questions.length - 1}
-//   onFinishTest={async (result) => {
-//     try {
-//       // 🔴 STOP & UPLOAD SCREEN RECORDING
-//       await screenShareRef.current?.stopAndUpload();
-//     } catch (e) {
-//       console.error("Screen recording upload failed:", e);
-//       // Optional: block or allow finish
-//     }
+      //       <QuestionBox
+      //   question={questions[currentQuestionIndex]}
+      //   index={currentQuestionIndex}
+      //   onNext={nextQuestion}
+      //   candidateId={candidateId}
+      //   candidateName={candidateName}
+      //   sessionId={sessionId}
+      //   isLastQuestion={currentQuestionIndex === questions.length - 1}
+      //   onFinishTest={async (result) => {
+      //     try {
+      //       // 🔴 STOP & UPLOAD SCREEN RECORDING
+      //       await screenShareRef.current?.stopAndUpload();
+      //     } catch (e) {
+      //       console.error("Screen recording upload failed:", e);
+      //       // Optional: block or allow finish
+      //     }
 
-//     // ✅ Continue normal finish flow
-//     setFinalResult(result);
-//     setShowResult(true);
-//   }}
-//   onRequestReview={(items) => {
-//     setReviewItems(items);
-//     setIsReviewMode(true);
-//   }}
-// />
-<QuestionBox
-  question={questions[currentQuestionIndex]}
-  index={currentQuestionIndex}
-  onNext={nextQuestion}
-  candidateId={candidateId}
-  candidateName={candidateName}
-  sessionId={sessionId}
-  isLastQuestion={currentQuestionIndex === questions.length - 1}
-
-  // 🔴 onFinishTest should ONLY handle UI state
-  onFinishTest={(result) => {
-    setFinalResult(result);
-    setShowResult(true);
-  }}
-
-  onRequestReview={(items) => {
-    setReviewItems(items);
-    setIsReviewMode(true);
-  }}
-
-  screenShareRef={screenShareRef}
-/>
+      //     // ✅ Continue normal finish flow
+      //     setFinalResult(result);
+      //     setShowResult(true);
+      //   }}
+      //   onRequestReview={(items) => {
+      //     setReviewItems(items);
+      //     setIsReviewMode(true);
+      //   }}
+      // />
+      <QuestionBox
+        question={questions[currentQuestionIndex]}
+        index={currentQuestionIndex}
+        onNext={nextQuestion}
+        candidateId={candidateId}
+        candidateName={candidateName}
+        sessionId={sessionId}
+        isLastQuestion={currentQuestionIndex === questions.length - 1}
+        // 🔴 onFinishTest should ONLY handle UI state
+        onFinishTest={(result) => {
+          setFinalResult(result);
+          setShowResult(true);
+        }}
+        onRequestReview={(items) => {
+          setReviewItems(items);
+          setIsReviewMode(true);
+        }}
+        screenShareRef={screenShareRef}
+      />
 
       // <QuestionBox
       //   question={questions[currentQuestionIndex]}
@@ -605,12 +806,12 @@ export default function Proctoring() {
   return (
     <div style={styles.container}>
       {/* Candidate Header */}
-      <div style={styles.glowA} />
-      <div style={styles.glowB} />
-      <div style={styles.glowC} />
-      <header style={styles.header}>
-        <div style={styles.headerBar}>
-          <h1 style={styles.headerTitle}>REX Dashboard</h1>
+      <SparklesBackground />
+      <header className="p-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* <h1 className="text-xl flex items-center bg-gradient-to-r from-purple-400 to-blue-400 text-transparent bg-clip-text font-semibold">
+            Dashboard
+          </h1> */}
           <CandidateInfo name={candidateName} id={candidateId} />
         </div>
       </header>
@@ -619,24 +820,27 @@ export default function Proctoring() {
       <main style={styles.layout}>
         <div style={styles.leftPanel}>
           <div style={{ flex: 1, minHeight: 0 }}>
-            <WebcamFeed 
-            candidateId={candidateId}
-            candidateName={candidateName}
-            sessionId={sessionId}
-            onViolation={(msg) => { setPopupMessage(msg); setPopupVisible(true); }} 
-            onDisqualify={(msg) => {
-              setDisqualified(true);
-              setPopupMessage(msg);
-              setPopupVisible(true);
-            }}
+            <WebcamFeed
+              candidateId={candidateId}
+              candidateName={candidateName}
+              sessionId={sessionId}
+              onViolation={(msg) => {
+                setPopupMessage(msg);
+                setPopupVisible(true);
+              }}
+              onDisqualify={(msg) => {
+                setDisqualified(true);
+                setPopupMessage(msg);
+                setPopupVisible(true);
+              }}
             />
           </div>
           <ScreenShare
-  ref={screenShareRef}
-  candidateId={candidateId}
-  onRecordingStart={() => setScreenRecordingStarted(true)}
-  onRecordingStop={() => setScreenRecordingStarted(false)}
-/>
+            ref={screenShareRef}
+            candidateId={candidateId}
+            onRecordingStart={() => setScreenRecordingStarted(true)}
+            onRecordingStop={() => setScreenRecordingStarted(false)}
+          />
 
           {/* <ScreenShare candidateId={candidateId} 
             onRecordingStart={() => setScreenRecordingStarted(true)}
@@ -644,9 +848,7 @@ export default function Proctoring() {
           /> */}
         </div>
 
-        <div style={styles.rightPanel}>
-          {renderRightPanelContent()}
-        </div>
+        <div style={styles.rightPanel}>{renderRightPanelContent()}</div>
       </main>
 
       {/* Popup Modal */}
@@ -662,7 +864,9 @@ export default function Proctoring() {
         <div style={styles.overlay}>
           <div style={styles.overlayCard}>
             <h2 style={styles.overlayTitle}>Disqualified</h2>
-            <p style={{ marginBottom: 16 }}>{popupMessage || "Test terminated due to policy violation."}</p>
+            <p style={{ marginBottom: 16 }}>
+              {popupMessage || "Test terminated due to policy violation."}
+            </p>
             <button
               onClick={() => {
                 // Optionally navigate home or keep overlay
