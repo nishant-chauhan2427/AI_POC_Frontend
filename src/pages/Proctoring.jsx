@@ -473,7 +473,7 @@ export default function Proctoring() {
           formData.append("reason", "User switched tabs");
           formData.append("timestamp", new Date().toISOString());
           await postForm("/frames/log_tab_violation", formData);
-          const message = `Warning: You have switched tabs ${violationCount} time(s). Further violations may lead to disqualification.`;
+          const message = `Warning : You have switched tabs ${violationCount} time(s). Further violations may lead to disqualification.`;
           setPopupMessage(message);
           setPopupVisible(true);
         } catch (error) {

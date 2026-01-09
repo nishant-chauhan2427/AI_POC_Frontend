@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import useAudioRecording from "../hooks/useAudioRecording";
 import { getJSON } from "../utils/api";
+import { Mic, Square, SkipForward, Loader2 } from "lucide-react";
+import { RotateCcw, CheckCircle2 } from "lucide-react";
 
+import { Volume2, VolumeX } from "lucide-react";
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 export default function QuestionBox({
@@ -847,7 +850,7 @@ export default function QuestionBox({
               </span>
             )} */}
           </div>
-          <h2 style={styles.title}>Exam</h2>
+          <h2 style={styles.title}>AI INTERVIEW</h2>
         </div>
 
         <div style={styles.rule} />
@@ -860,49 +863,99 @@ export default function QuestionBox({
             </p>
 
             {/* Question controls */}
-            <div style={styles.questionActions}>
+            <div className="flex justify-center mt-6">
               <button
                 onClick={handleRepeatQuestion}
                 disabled={isSubmitting || isTranscribing}
-                style={styles.btnRepeat(isSpeaking)}
                 title={isSpeaking ? "Stop reading" : "Repeat question"}
+                className={`
+      flex items-center gap-2 px-5 py-2.5 rounded-full font-medium
+      transition-all duration-200
+      ${
+        isSubmitting || isTranscribing
+          ? "bg-gray-400 cursor-not-allowed opacity-60"
+          : isSpeaking
+          ? "bg-red-500 hover:bg-red-600 text-white shadow-lg cursor-pointer"
+          : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-md cursor-pointer"
+      }
+      focus:outline-none focus:ring-2 focus:ring-offset-2
+      ${isSpeaking ? "focus:ring-red-400" : "focus:ring-emerald-400"}
+    `}
               >
-                {isSpeaking ? "🔇 Stop" : "🔊 Repeat"}
+                {isSpeaking ? (
+                  <>
+                    <VolumeX className="w-5 h-5" />
+                    Stop
+                  </>
+                ) : (
+                  <>
+                    <Volume2 className="w-5 h-5" />
+                    Repeat
+                  </>
+                )}
               </button>
             </div>
           </div>
 
           {/* Transcript Preview */}
           {isPreviewMode && transcriptPreview && (
-            <div style={styles.preview}>
-              <div style={styles.previewTitle}>Your Answer Preview:</div>
-              <div style={styles.previewText}>"{transcriptPreview}"</div>
-              <div style={styles.previewActions}>
+            <div className="mt-6 rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md p-5 shadow-lg">
+              {/* Title */}
+              <div className="text-sm font-semibold text-gray-300 mb-2">
+                Your Answer Preview
+              </div>
+
+              {/* Transcript */}
+              <div className="text-base text-white leading-relaxed italic mb-5">
+                “{transcriptPreview}”
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-wrap justify-end gap-4">
+                {/* Re-record */}
                 <button
                   onClick={handleReRecord}
                   disabled={isSubmitting}
-                  style={styles.btnReRecord}
+                  className={`
+          group flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold
+          transition-all duration-200 cursor-pointer
+          ${
+            isSubmitting
+              ? "bg-gray-500/40 text-gray-300 cursor-not-allowed"
+              : "bg-amber-500 hover:bg-amber-600 text-white shadow-md"
+          }
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-400
+        `}
                 >
-                  🔄 Re-record
+                  <RotateCcw className="w-5 h-5 transition-transform group-hover:-rotate-90" />
+                  Re-record
                 </button>
+
+                {/* Confirm & Submit */}
                 <button
                   onClick={handleConfirmSubmit}
                   disabled={isSubmitting}
-                  style={styles.btnConfirm}
+                  className={`
+          group flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold
+          transition-all duration-200 cursor-pointer
+          ${
+            isSubmitting
+              ? "bg-gray-500/40 text-gray-300 cursor-not-allowed"
+              : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg"
+          }
+          focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-400
+        `}
                 >
                   {isSubmitting ? (
-                    <span
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 8,
-                      }}
-                    >
-                      <span style={styles.smSpinner}></span>
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
                       Submitting...
-                    </span>
+                    </>
                   ) : (
-                    "✅ Confirm & Submit"
+                    <>
+                      <CheckCircle2 className="w-5 h-5 transition-transform group-hover:scale-110" />
+                      Confirm & Submit
+                    </>
                   )}
                 </button>
               </div>
@@ -916,52 +969,99 @@ export default function QuestionBox({
 
         <div style={styles.actions}>
           {!isPreviewMode && (
-            <>
+            <div className="flex flex-wrap justify-center gap-4 mt-6">
+              {/* Answer Button */}
               <button
                 onClick={handleAnswerClick}
                 disabled={isSubmitting || isTranscribing}
-                style={styles.btnAnswer(isRecording)}
+                className={`
+        group flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold
+        transition-all duration-200
+        ${
+          isSubmitting || isTranscribing
+            ? "bg-gray-500/40 text-gray-300 cursor-not-allowed"
+            : isRecording
+            ? "bg-red-500 hover:bg-red-600 text-white shadow-lg animate-pulse"
+            : "bg-indigo-500 hover:bg-indigo-600 text-white shadow-md"
+        }
+         
+        ${isRecording ? "focus:ring-red-400" : "focus:ring-indigo-400"}
+      `}
               >
                 {isTranscribing ? (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <span style={styles.smSpinner}></span>
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     Transcribing...
-                  </span>
+                  </>
                 ) : isRecording ? (
-                  "⏹️ Done"
+                  <div className="cursor-pointer flex gap-2 items-center">
+                    <Square className="w-5 h-5 " />
+                    Done
+                  </div>
                 ) : (
-                  "🎤 Answer"
+                  <div className="cursor-pointer flex gap-2 items-center">
+                    <Mic className="w-5 h-5 cursor-pointer transition-transform group-hover:scale-110" />
+                    Answer
+                  </div>
                 )}
               </button>
+
+              {/* Skip Button */}
               <button
                 onClick={handleSkip}
                 disabled={isSubmitting || isTranscribing || isSkipping}
-                style={styles.btnSkip}
                 title="Skip this question"
+                className={`
+        group flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold
+        transition-all duration-200
+        ${
+          isSubmitting || isTranscribing || isSkipping
+            ? "bg-gray-500/40 text-gray-300 cursor-not-allowed"
+            : "bg-gray-700 hover:bg-gray-800 text-white shadow-md"
+        }
+        focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+      `}
               >
                 {isSkipping ? (
-                  <span
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <span style={styles.smSpinner}></span>
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
                     Skipping...
-                  </span>
+                  </>
                 ) : (
-                  "Skip ⏭"
+                  <div className="cursor-pointer flex gap-2 items-center">
+                    <SkipForward className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+                    Skip
+                  </div>
                 )}
               </button>
-            </>
+
+              {isLastQuestion && (
+                <button
+                  onClick={handleFinish}
+                  disabled={isSubmitting}
+                  className={` px-4 rounded-full cursor-pointer
+      
+      ${
+        isSubmitting
+          ? "bg-gray-500/40 text-gray-300 cursor-not-allowed"
+          : "bg-violet-600 hover:bg-violet-700 text-white shadow-lg"
+      }
+      
+    `}
+                >
+                  {isSubmitting ? (
+                    <div className="flex items-center gap-1">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Finishing...
+                    </div>
+                  ) : (
+                    "Finish Test"
+                  )}
+                </button>
+              )}
+            </div>
           )}
+
           {/* <button
             onClick={handleMarkForReview}
             disabled={!hasAnswered || isSubmitting || isMarkingForReview}
@@ -977,28 +1077,30 @@ export default function QuestionBox({
               '🔖 Mark for Review'
             )}
           </button> */}
-          {isLastQuestion ? (
+          {/* {isLastQuestion && (
             <button
               onClick={handleFinish}
               disabled={isSubmitting}
-              style={styles.btnFinish}
+              className={` px-4 rounded-full cursor-pointer
+      
+      ${
+        isSubmitting
+          ? "bg-gray-500/40 text-gray-300 cursor-not-allowed"
+          : "bg-violet-600 hover:bg-violet-700 text-white shadow-lg"
+      }
+      
+    `}
             >
               {isSubmitting ? (
                 <>
-                  <span style={styles.smSpinner}></span>
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   Finishing...
                 </>
               ) : (
-                <>🏁 Finish Test</>
+                "Finish Test"
               )}
             </button>
-          ) : (
-            <></>
-
-            // <button onClick={handleNext} disabled={isSubmitting} style={styles.btnNext}>
-            //   Next ➡️
-            // </button>
-          )}
+          )} */}
         </div>
       </div>
     </div>

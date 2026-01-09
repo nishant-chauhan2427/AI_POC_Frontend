@@ -236,7 +236,7 @@ export default function AadhaarCapture() {
           <h2 className="text-xl font-semibold text-white">
             Aadhaar Card Capture
           </h2>
-          <p className="text-sm text-white mt-1">
+          <p className=" text-yellow-400 mt-1">
             Take a clear photo of your Aadhaar card for verification
           </p>
         </div>
@@ -244,7 +244,7 @@ export default function AadhaarCapture() {
         {!capturedImage && (
           <canvas
             ref={canvasRef}
-            className="w-full h-48 rounded-lg bg-black/40 border border-white/10 mb-4"
+            className="w-full h-1 opacity-0 rounded-lg bg-black/40 border border-white/10 mb-4"
           />
         )}
 
@@ -253,7 +253,7 @@ export default function AadhaarCapture() {
             onClick={startCamera}
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg
               gradient-primary
-               text-white font-medium hover:shadow-lg transition cursor-pointer"
+               text-white font-medium  hover:shadow-lg transition cursor-pointer"
           >
             <Camera size={18} />
             Start Camera
@@ -277,8 +277,8 @@ export default function AadhaarCapture() {
               <button
                 onClick={handleExtract}
                 disabled={isLoading}
-                className="flex-1 py-2 rounded-lg bg-[#377fc1] text-white font-medium
-               hover:bg-[#2f6da5] transition disabled:opacity-50"
+                className="flex-1 py-2 rounded-lg gradient-primary cursor-pointer text-white font-medium
+               "
               >
                 ✨ Save Picture
               </button>
@@ -286,7 +286,7 @@ export default function AadhaarCapture() {
               <button
                 onClick={handleRetake}
                 disabled={isLoading}
-                className="flex-1 py-2 rounded-lg border border-white/20 text-white
+                className="flex-1 py-2 cursor-pointer rounded-lg border border-white/20 text-white
                hover:bg-white/10 transition disabled:opacity-50"
               >
                 <RotateCw size={16} className="inline mr-1" />
@@ -371,18 +371,18 @@ export default function AadhaarCapture() {
                 autoPlay
                 muted
                 playsInline
-                className="w-full h-100 object-cover scale-x-[-1]"
+                className="w-full h-96 object-cover scale-x-[-1]"
               />
 
               <div className="absolute inset-0 bg-black/30"></div>
 
-              <div className="absolute inset-8 border-2 border-dashed border-blue-600 rounded-lg flex items-center justify-center">
-                <span className="text-blue-600  font-semibold">
+              <div className="absolute inset-8 border-2 border-dashed border-yellow-600 rounded-lg flex items-center justify-center">
+                <span className="text-yellow-400  font-semibold">
                   Place Aadhaar Card Here
                 </span>
               </div>
 
-              <div className="absolute top-3 right-3 bg-black/60 px-2 py-1 rounded text-white text-xs">
+              <div className="absolute top-3 right-3 font-bold bg-black/60 px-2 py-1 rounded text-yellow-400 text-sm">
                 {timer}s
               </div>
             </div>

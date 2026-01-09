@@ -576,7 +576,9 @@ export default function WebcamFeed({
 
   return (
     <div style={styles.container}>
-      {!isStreaming && !error && renderLoading()}
+      {!isStreaming && !error && (
+        <div className="h-full lg:mt-44">{renderLoading()}</div>
+      )}
       {error && renderError()}
       <video ref={videoRef} autoPlay playsInline muted style={styles.video} />
       {headPoseData && (

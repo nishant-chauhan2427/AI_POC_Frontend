@@ -128,10 +128,11 @@ export default function Register() {
           <div className="border-animation"></div>
           <div className="text-center mb-6">
             <h2 className="text-xl font-semibold text-white tracking-tight">
-              Candidate Registration
+              AI Interview Registration
             </h2>
             <p className="mt-2 text-sm text-white">
-              Enter your details to begin the AI-proctored session
+              Provide your information to proceed with the AI-driven interview
+              process
             </p>
           </div>
 
@@ -205,7 +206,7 @@ export default function Register() {
           <span>Powered by</span>
 
           <span className="font-semibold text-gray-400 flex items-center gap-[0.5] ">
-            <img src="/logo.png" alt="" className="size-4" />
+            <img src="/logo.png" alt="" className="size-3" />
 
             <span> PRAGYAN AI</span>
           </span>

@@ -1,26 +1,18 @@
 export default function PopupModal({ message, onClose }) {
-  const styles = {
-    overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 },
-    card: { background: 'rgba(255,255,255,0.20)', borderRadius: 12, padding: 24, textAlign: 'center', color: '#fff', width: '100%', maxWidth: 420, boxShadow: '0 20px 40px rgba(0,0,0,0.35)' },
-    text: { fontSize: 18, textAlign: 'left' },
-    btn: { padding: '10px 16px', fontWeight: 700, color: '#fff', background: '#ec4899', border: 'none', borderRadius: 10, cursor: 'pointer', marginTop: 16 }
-  };
   return (
-    <div style={styles.overlay}>
-      <div style={styles.card}>
-        <div style={styles.text}>
-          {typeof message === 'string' ? (
-            <p>{message}</p>
-          ) : (
-            message
-          )}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md">
+      <div className="w-full max-w-md rounded-xl bg-white/20 p-6 text-white shadow-[0_20px_40px_rgba(0,0,0,0.35)]">
+        <div className="text-left text-lg text-yellow-400">
+          {typeof message === "string" ? <p>{message}</p> : message}
         </div>
-        <button 
-          onClick={onClose}
-          style={styles.btn}
-        >
-          Close
-        </button>
+        <div className="flex justify-end">
+          <button
+            onClick={onClose}
+            className="mt-4  rounded-md bg-red-500 px-4 py-2 cursor-pointer font-bold text-white transition   active:scale-95"
+          >
+            Close
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -596,8 +596,10 @@ export default function ReportAnalysis() {
             <CandidateInfo name={candidateName} id={candidateId} />
           </div>
         </header>
-        <h3>Test Report</h3>
-
+        <h3 className=" text-xl py-4 font-semibold  text-white">
+          {" "}
+          Test Report
+        </h3>
         <div style={styles.grid}>
           {/* Candidate Info */}
           <div

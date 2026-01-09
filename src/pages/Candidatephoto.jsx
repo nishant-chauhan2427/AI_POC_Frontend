@@ -675,7 +675,7 @@ export default function CandidatePhotoCapture() {
           -translate-x-1/2 -translate-y-1/2
           w-1/2 h-[80%]
           rounded-full
-          border-[3px] border-dashed border-indigo-500
+          border-[3px] border-dashed border-yellow-600
            
           pointer-events-none z-20
         "
@@ -683,7 +683,7 @@ export default function CandidatePhotoCapture() {
                 <div
                   className="
             absolute top-2 left-1/2 -translate-x-1/2
-            bg-indigo-500
+            bg-yellow-400
             px-3 py-1
             rounded-md
             text-xs font-bold text-white
