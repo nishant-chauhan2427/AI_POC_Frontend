@@ -1,9 +1,37 @@
 export default function CandidateInfo({ name, id }) {
   const styles = {
-    wrap: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' },
-    name: { fontSize: 24, fontWeight: 800, color: '#fff', margin: 0,fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif' },
-    id: { fontSize: 14, color: 'rgba(255,255,255,0.8)', margin: 0,fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif'},
-    btn: { padding: '8px 16px', fontWeight: 700, color: '#fff', background: '#ef4444', border: 'none', borderRadius: 10, cursor: 'pointer',fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif'}
+    wrap: {
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      width: "100%",
+    },
+    name: {
+      fontSize: 24,
+      fontWeight: 800,
+      color: "#fff",
+      margin: 0,
+      fontFamily:
+        'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+    },
+    id: {
+      fontSize: 14,
+      color: "rgba(255,255,255,0.8)",
+      margin: 0,
+      fontFamily:
+        'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+    },
+    btn: {
+      padding: "8px 16px",
+      fontWeight: 700,
+      color: "#fff",
+      background: "#ef4444",
+      border: "none",
+      borderRadius: 10,
+      cursor: "pointer",
+      fontFamily:
+        'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
+    },
   };
   function clearRegistration() {
     if (window.confirm("Are you sure you want to end the session?")) {
@@ -19,9 +47,21 @@ export default function CandidateInfo({ name, id }) {
         <h3 style={styles.name}>Welcome, {name}</h3>
         <p style={styles.id}>ID: {id}</p>
       </div>
-      <button 
+      <button
         onClick={clearRegistration}
-        style={styles.btn}
+        className="
+    px-4 py-2.5
+    rounded-lg
+    text-sm font-bold
+    text-red-400
+    bg-red-500/10
+    border border-red-500/30
+    transition-colors duration-200
+    hover:bg-red-500/20
+    hover:text-red-300
+    active:scale-95
+    cursor-pointer
+  "
       >
         End Session
       </button>
