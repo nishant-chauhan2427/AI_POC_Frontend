@@ -3,36 +3,94 @@ import { Trophy, Brain, Target, TrendingUp, Clock, Star, Download, Home } from '
 
 interface Step8ResultsProps {
   onRestart: () => void;
+  reportSummary: {
+    totalQuestions: number;
+    correct: number;
+    skipped: number;
+    score: number;
+    accuracy: number;
+  };
 }
 
-export function Step8Results({ onRestart }: Step8ResultsProps) {
-  const overallScore = 87;
 
-  const metrics = [
-    { icon: Trophy, label: 'Overall Score', value: `${overallScore}%`, color: 'text-primary' },
-    { icon: Brain, label: 'Technical Skills', value: '92%', color: 'text-[var(--status-ready)]' },
-    { icon: Target, label: 'Problem Solving', value: '85%', color: 'text-secondary' },
-    { icon: TrendingUp, label: 'Communication', value: '88%', color: 'text-[var(--status-processing)]' },
-  ];
+export function Step8Results({ reportSummary, onRestart }: Step8ResultsProps) {
+  // const overallScore = 87;
 
-  const detailedScores = [
-    { category: 'Technical Knowledge', score: 92, total: 100 },
-    { category: 'Problem Solving', score: 85, total: 100 },
-    { category: 'Communication Skills', score: 88, total: 100 },
-    { category: 'Cultural Fit', score: 82, total: 100 },
-    { category: 'Leadership Potential', score: 90, total: 100 },
-  ];
+  const overallScore = reportSummary?.accuracy;
 
-  const strengths = [
-    'Strong technical foundation and problem-solving abilities',
-    'Clear and articulate communication style',
-    'Good understanding of industry best practices',
-  ];
+const metrics = [
+  {
+    icon: Trophy,
+    label: "Overall Score",
+    value: `${overallScore}%`,
+    color: "text-primary",
+  },
+  {
+    icon: Brain,
+    label: "Correct Answers",
+    value: reportSummary?.correct,
+    color: "text-[var(--status-ready)]",
+  },
+  {
+    icon: Target,
+    label: "Total Questions",
+    value: reportSummary?.totalQuestions,
+    color: "text-secondary",
+  },
+  {
+    icon: TrendingUp,
+    label: "Total Score",
+    value: reportSummary?.score,
+    color: "text-[var(--status-processing)]",
+  },
+];
 
-  const improvements = [
-    'Consider adding more real-world project examples',
-    'Expand on team collaboration experiences',
-  ];
+// Detailed breakdown derived from summary
+const detailedScores = [
+  {
+    category: "Accuracy",
+    score: reportSummary?.accuracy,
+    total: 100,
+  },
+  {
+    category: "Correct Answers",
+    score:
+      reportSummary?.totalQuestions > 0
+        ? Math.round(
+            (reportSummary?.correct / reportSummary?.totalQuestions) * 100
+          )
+        : 0,
+    total: 100,
+  },
+  {
+    category: "Attempt Rate",
+    score:
+      reportSummary?.totalQuestions > 0
+        ? Math.round(
+            ((reportSummary?.totalQuestions - reportSummary?.skipped) /
+              reportSummary?.totalQuestions) *
+              100
+          )
+        : 0,
+    total: 100,
+  },
+];
+
+// Strengths derived logically
+const strengths =
+  reportSummary?.correct > reportSummary?.totalQuestions / 2
+    ? [
+        "Good accuracy across attempted questions",
+        "Consistent performance throughout the interview",
+      ]
+    : ["Shows effort in attempting questions"];
+
+// Improvements derived logically
+const improvements =
+  reportSummary?.skipped > 0
+    ? ["Reduce skipped questions", "Improve time management"]
+    : ["Work on increasing overall accuracy"];
+
 
   return (
     <div className="min-h-screen p-6">
