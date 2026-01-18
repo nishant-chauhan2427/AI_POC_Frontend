@@ -2207,3 +2207,8 @@ html {
   syntax: "*";
   inherits: false
 }
+
+
+button{
+  cursor: pointer !important;
+}

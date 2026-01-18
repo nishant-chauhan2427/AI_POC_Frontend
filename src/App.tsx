@@ -285,8 +285,14 @@ const handleInterviewComplete = async () => {
 
   /* ---------------- RENDER ---------------- */
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
-      <Logo ></Logo>
+    <div className="min-h-screen w-full bg-background text-foreground px-4 py-4">
+      <header className="py-4 container">
+        <motion.div className='flex justify-start  items-center'> <img
+            src="/VAYUZ-logo-hd.png"
+            alt="VAYUZ"
+            className="h-8 object-contain"
+          /> </motion.div>
+      </header>
       <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
 
       <AnimatePresence mode="wait">

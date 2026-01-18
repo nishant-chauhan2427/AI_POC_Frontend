@@ -13,18 +13,18 @@ export function Step1Welcome({ onNext }: Step1WelcomeProps) {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-2xl w-full text-center"
       >
-        <motion.div
+        {/* <motion.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring" }}
           className="flex items-center justify-center mb-8"
         >
           <img
-            src="/PRAGYAN.AI-logo-dark.svg"
+            src="/VAYUZ-white-logo.png"
             alt="PRAGYAN.AI Logo"
             className="h-28 object-contain"
           />
-        </motion.div>
+        </motion.div> */}
 
 
         <h1 className="text-5xl mb-6">
@@ -38,13 +38,21 @@ export function Step1Welcome({ onNext }: Step1WelcomeProps) {
 
         <motion.button
           onClick={onNext}
-          className="pointer px-10 py-4 bg-primary text-primary-foreground rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all"
+          className="mb-12 pointer px-10 py-4 bg-primary text-primary-foreground rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           Next
         </motion.button>
+        <motion.div className='flex justify-center  items-center'>Powered by <img
+            src="/PRAGYAN.AI-logo-dark.svg"
+            alt="PRAGYAN.AI Logo"
+            className="h-8 object-contain"
+          /> </motion.div>
       </motion.div>
+
+
+      
     </div>
   );
 }
