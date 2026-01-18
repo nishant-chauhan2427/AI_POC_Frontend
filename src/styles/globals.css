@@ -187,3 +187,8 @@ html {
     }
   }
 }
+
+
+.pointer{
+  cursor: pointer !important;
+}

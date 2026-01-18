@@ -41,12 +41,12 @@ export function Step2UserDetails({ onNext }: Step2UserDetailsProps) {
       >
         <div className="glass-card rounded-3xl p-10">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <div className="w-12 h-12  rounded-lg bg-primary/10 flex items-center justify-center">
               <User className="w-6 h-6 text-primary" strokeWidth={1.5} />
             </div>
             <div>
               <h2 className="text-2xl">Basic Details</h2>
-              <p className="text-sm text-muted-foreground">Tell us about yourself</p>
+              <p className="text-sm text-muted-foreground">Here you can check your details</p>
             </div>
           </div>
 
@@ -59,7 +59,7 @@ export function Step2UserDetails({ onNext }: Step2UserDetailsProps) {
                 onChange={(e) => handleChange('name', e.target.value)}
                 placeholder="Enter your full name"
                 required
-                className="w-full px-4 py-3 rounded-xl bg-input-background border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                className="w-full px-4 py-3  rounded-lg bg-input-background border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
               />
             </div>
 
@@ -71,35 +71,35 @@ export function Step2UserDetails({ onNext }: Step2UserDetailsProps) {
                 onChange={(e) => handleChange('email', e.target.value)}
                 placeholder="your.email@example.com"
                 required
-                className="w-full px-4 py-3 rounded-xl bg-input-background border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                className="w-full px-4 py-3  rounded-lg bg-input-background border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-muted-foreground mb-2">Phone Number</label>
+              <label className="block text-sm text-muted-foreground mb-2">Test ID</label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleChange('phone', e.target.value)}
-                placeholder="+1 (555) 000-0000"
-                className="w-full px-4 py-3 rounded-xl bg-input-background border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                placeholder="testid 134234423432424"
+                className="w-full px-4 py-3 rounded-lg bg-input-background border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
               />
             </div>
 
-            <div>
+            {/* <div>
               <label className="block text-sm text-muted-foreground mb-2">Location</label>
               <input
                 type="text"
                 value={formData.location}
                 onChange={(e) => handleChange('location', e.target.value)}
                 placeholder="City, Country"
-                className="w-full px-4 py-3 rounded-xl bg-input-background border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
+                className="w-full px-4 py-3  rounded-lg bg-input-background border border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none transition-colors"
               />
-            </div>
+            </div> */}
 
             <motion.button
               type="submit"
-              className="w-full px-6 py-4 bg-primary text-primary-foreground rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all mt-8"
+              className="pointer w-full px-6 py-4 bg-primary text-primary-foreground  rounded-lg hover:shadow-lg hover:shadow-primary/20 transition-all mt-8"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

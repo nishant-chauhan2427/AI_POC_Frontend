@@ -1,11 +1,11 @@
 import { motion } from 'motion/react';
 import { Trophy, Brain, Target, TrendingUp, Clock, Star, Download, Home } from 'lucide-react';
 
-interface Step9ResultsProps {
+interface Step8ResultsProps {
   onRestart: () => void;
 }
 
-export function Step9Results({ onRestart }: Step9ResultsProps) {
+export function Step8Results({ onRestart }: Step8ResultsProps) {
   const overallScore = 87;
 
   const metrics = [
