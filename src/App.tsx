@@ -95,7 +95,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(4);
+  const [currentStep, setCurrentStep] = useState(1);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -338,7 +338,6 @@ const handleInterviewComplete = async () => {
               totalQuestions={questions.length}
               question={questions[currentQuestionIndex]}
               onAnswer={handleAnswer}
-              systemReady={true}
               cameraStream={cameraStream}
               screenStream={screenStream}
             />
