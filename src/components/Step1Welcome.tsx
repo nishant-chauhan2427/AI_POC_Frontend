@@ -17,10 +17,15 @@ export function Step1Welcome({ onNext }: Step1WelcomeProps) {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring" }}
-          className="inline-flex items-center justify-center w-24 h-24 rounded-2xl bg-primary/10 mb-8 pulse-glow"
+          className="flex items-center justify-center mb-8"
         >
-          <Sparkles className="w-12 h-12 text-primary" strokeWidth={1.5} />
+          <img
+            src="/PRAGYAN.AI-logo-dark.svg"
+            alt="PRAGYAN.AI Logo"
+            className="h-28 object-contain"
+          />
         </motion.div>
+
 
         <h1 className="text-5xl mb-6">
           Welcome to the AI<br />Interview Experience

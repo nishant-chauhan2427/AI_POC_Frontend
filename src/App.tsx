@@ -95,7 +95,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(6);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -110,6 +110,10 @@ export default function App() {
 
   const [cameraStream, setCameraStream] = useState(null);
   const [screenStream, setScreenStream] = useState(null);
+
+  // ✅ ADD: holds real report summary from API
+const [reportSummary, setReportSummary] = useState(null);
+
 
   const totalSteps = 10;
   const questions = mockQuestions.default;
@@ -163,10 +167,86 @@ export default function App() {
     setCurrentStep(6);
   };
 
-  const handlePhotoCapture = (photo) => {
+  // ✅ CHANGE: Upload candidate photo after capture
+const handlePhotoCapture = async (photo: string) => {
+  try {
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+    // 🔹 Convert base64 → Blob
+    const blob = await fetch(photo).then((r) => r.blob());
+
+    // 🔹 Prepare form data
+    const formData = new FormData();
+    formData.append("file", blob, "candidate_photo.png");
+    formData.append(
+      "candidate_id",
+      localStorage.getItem("candidate_id") || ""
+    );
+
+    // 🔹 REAL API CALL (replace URL if needed)
+    const response = await fetch(
+      `${API_BASE}/aadhaarcard/upload-candidate-image/`,
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Photo upload failed");
+    }
+
+    // 🔹 Save success flag (used later)
+    localStorage.setItem("iscandidatephoto", "true");
+
+    // 🔹 Store photo locally if needed
     setPhotoData(photo);
+
+    // ✅ Move to NEXT STEP (System Check)
     handleNext();
-  };
+  } catch (error) {
+    console.error("Photo upload error:", error);
+    alert("Failed to upload photo. Please retake.");
+  }
+};
+
+// ✅ CHANGE: Fetch real report summary before Step8Results
+const handleInterviewComplete = async () => {
+  try {
+    const candidateId = localStorage.getItem("candidate_id");
+
+    // 🔥 REAL API CALL (same source as ReportAnalysis)
+    const data = await getJSON(`/report/qa_logs/${candidateId}`);
+
+    if (
+      data?.status_code === 200 &&
+      data?.data?.length > 0
+    ) {
+      const qaLog = data.data[0].qa_log;
+
+      const totalQuestions = qaLog.length;
+      const correct = qaLog.filter(q => q.is_correct).length;
+      const skipped = qaLog.filter(q => q.skipped).length;
+      const score = qaLog.reduce((s, q) => s + (q.score || 0), 0);
+
+      // ✅ Derived metrics (same math as ReportAnalysis)
+      setReportSummary({
+        totalQuestions,
+        correct,
+        skipped,
+        score,
+        accuracy: totalQuestions
+          ? Math.round((correct / totalQuestions) * 100)
+          : 0,
+      });
+
+      setCurrentStep(8); // ✅ Go to Step8Results
+    }
+  } catch (err) {
+    console.error("Failed to fetch report summary", err);
+  }
+};
+
+
 
   const handleAnswer = (answer, timeSpent) => {
     const question = questions[currentQuestionIndex];
@@ -272,7 +352,7 @@ export default function App() {
 
         {currentStep === 9 && (
           <motion.div key="step9">
-            <Step8Results onRestart={handleRestart} />
+            <Step8Results reportSummary={reportSummary} onRestart={handleRestart} />
           </motion.div>
         )}
 
