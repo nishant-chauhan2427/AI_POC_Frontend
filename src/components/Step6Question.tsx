@@ -28,10 +28,10 @@ export function Step6Question({ questionNumber, totalQuestions, question, onAnsw
   const [showTabAlert, setShowTabAlert] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   // const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const recording = screenStream.active;
+  const recording = screenStream?.active;
   
 // log(screenStream);
-console.log(screenStream.active);
+console.log(screenStream?.active);
 
   useEffect(() => {
     const timer = setInterval(() => {
