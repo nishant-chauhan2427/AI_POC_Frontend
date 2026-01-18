@@ -1,7 +1,17 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Brain, Clock, Mic, MicOff, Video, AlertTriangle, Eye, Radio, Monitor } from 'lucide-react';
-import { log } from 'console';
+import { useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Brain,
+  Clock,
+  Mic,
+  MicOff,
+  Video,
+  AlertTriangle,
+  Eye,
+  Monitor,
+} from "lucide-react";
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 interface Step6QuestionProps {
   questionNumber: number;
@@ -9,70 +19,114 @@ interface Step6QuestionProps {
   question: QuestionData;
   onAnswer: (answer: string, timeSpent: number) => void;
   systemReady: boolean;
-    cameraStream: MediaStream;
+  cameraStream: MediaStream;
   screenStream: MediaStream;
 }
-
 
 export interface QuestionData {
   id: string;
   text: string;
-  type: 'multiple-choice' | 'open-ended';
+  type: "multiple-choice" | "open-ended";
   options?: string[];
 }
 
-export function Step6Question({ questionNumber, totalQuestions, question, onAnswer, systemReady, cameraStream, screenStream }: Step6QuestionProps) {
-  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
+export function Step6Question({
+  questionNumber,
+  totalQuestions,
+  question,
+  onAnswer,
+  systemReady,
+  cameraStream,
+  screenStream,
+}: Step6QuestionProps) {
+  const [selectedAnswer, setSelectedAnswer] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
   const [showTabAlert, setShowTabAlert] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  // const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const recording = screenStream?.active;
-  
-// log(screenStream);
-console.log(screenStream?.active);
 
+  /* ---------------- TIMER ---------------- */
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeSpent(prev => prev + 1);
+      setTimeSpent((prev) => prev + 1);
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
+  /* ---------------- CAMERA PREVIEW ---------------- */
   useEffect(() => {
-  if (videoRef.current && cameraStream) {
-    videoRef.current.srcObject = cameraStream;
-    videoRef.current.play().catch(() => {});
-  }
-}, [cameraStream]);
+    if (videoRef.current && cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraStream]);
 
-
-
-
-  // Simulate tab switch detection (just for UI demo)
+  /* ---------------- TAB VIOLATION (OLD LOGIC MERGED) ---------------- */
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.hidden) {
         setShowTabAlert(true);
         setTimeout(() => setShowTabAlert(false), 4000);
+
+        try {
+          const formData = new FormData();
+          formData.append(
+            "candidate_id",
+            localStorage.getItem("candidate_id") || "",
+          );
+          formData.append("reason", "User switched tabs");
+          formData.append("timestamp", new Date().toISOString());
+
+          await fetch(`${API_BASE}/frames/log_tab_violation`, {
+            method: "POST",
+            body: formData,
+          });
+        } catch {
+          // silent fail (same as old code behaviour)
+        }
       }
     };
 
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
+
+  /* ---------------- RECORDING BORDER ---------------- */
+  useEffect(() => {
+    document.body.classList.toggle("recording-active", screenStream?.active);
+    return () => document.body.classList.remove("recording-active");
+  }, [screenStream]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleSubmit = () => {
-    if (selectedAnswer || isRecording) {
+  /* ---------------- SUBMIT (OLD submit_answer API) ---------------- */
+  const handleSubmit = async () => {
+    if (!selectedAnswer) return;
+
+    try {
+      const formData = new FormData();
+      formData.append(
+        "candidate_id",
+        localStorage.getItem("candidate_id") || "",
+      );
+      formData.append("question_id", question.id);
+      formData.append("question", question.text);
+      formData.append("answer", selectedAnswer);
+      formData.append("session_id", localStorage.getItem("session_id") || "");
+
+      await fetch(`${API_BASE}/questions/submit_answer`, {
+        method: "POST",
+        body: formData,
+      });
+
       onAnswer(selectedAnswer, timeSpent);
+    } catch (e) {
+      console.error("submit_answer failed", e);
     }
   };
 
@@ -82,9 +136,6 @@ console.log(screenStream?.active);
     <div className="min-h-screen relative overflow-hidden bg-background">
       {/* Tab Switch Alert */}
 
-      {recording && (
-        <div className="fixed inset-0 border-[6px] border-red-500 pointer-events-none z-50" />
-      )}
       <AnimatePresence>
         {showTabAlert && (
           <motion.div
@@ -95,11 +146,18 @@ console.log(screenStream?.active);
           >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-destructive" strokeWidth={2} />
+                <AlertTriangle
+                  className="w-5 h-5 text-destructive"
+                  strokeWidth={2}
+                />
               </div>
               <div>
-                <p className="font-medium text-destructive">Warning: Tab Switch Detected!</p>
-                <p className="text-xs text-muted-foreground">This activity has been recorded</p>
+                <p className="font-medium text-destructive">
+                  Warning: Tab Switch Detected!
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  This activity has been recorded
+                </p>
               </div>
             </div>
           </motion.div>
@@ -150,7 +208,10 @@ console.log(screenStream?.active);
 
           {/* Timer */}
           <div className="flex items-center gap-2 text-sm">
-            <Clock className="w-4 h-4 text-muted-foreground" strokeWidth={1.5} />
+            <Clock
+              className="w-4 h-4 text-muted-foreground"
+              strokeWidth={1.5}
+            />
             <span className="font-mono">{formatTime(timeSpent)}</span>
           </div>
         </div>
@@ -191,7 +252,9 @@ console.log(screenStream?.active);
                       className="w-full h-full object-cover"
                     />
 
-                    <p className="text-sm text-muted-foreground">Live Camera Feed</p>
+                    <p className="text-sm text-muted-foreground">
+                      Live Camera Feed
+                    </p>
                   </div>
                 </div>
 
@@ -241,8 +304,14 @@ console.log(screenStream?.active);
 
               <div className="glass-card rounded-xl p-3 border border-border">
                 <div className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" strokeWidth={1.5} />
-                  <p>Please stay in frame and avoid switching tabs during the interview</p>
+                  <AlertTriangle
+                    className="w-3.5 h-3.5 mt-0.5 flex-shrink-0"
+                    strokeWidth={1.5}
+                  />
+                  <p>
+                    Please stay in frame and avoid switching tabs during the
+                    interview
+                  </p>
                 </div>
               </div>
             </div>
@@ -264,13 +333,15 @@ console.log(screenStream?.active);
                   <Brain className="w-6 h-6 text-primary" strokeWidth={1.5} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-muted-foreground mb-3 tracking-wider">AI INTERVIEWER</p>
+                  <p className="text-xs text-muted-foreground mb-3 tracking-wider">
+                    AI INTERVIEWER
+                  </p>
                   <h2 className="text-2xl leading-relaxed">{question.text}</h2>
                 </div>
               </div>
 
               {/* Answer Options */}
-              {question.type === 'multiple-choice' && question.options && (
+              {question.type === "multiple-choice" && question.options && (
                 <div className="space-y-3 mb-8">
                   {question.options.map((option, index) => {
                     const isSelected = selectedAnswer === option;
@@ -285,22 +356,26 @@ console.log(screenStream?.active);
                         onClick={() => setSelectedAnswer(option)}
                         className={`
                           w-full p-5 rounded-xl border transition-all text-left
-                          ${isSelected
-                            ? 'border-primary bg-primary/5 glow-border'
-                            : 'border-border bg-accent/20 hover:border-primary/30'
+                          ${
+                            isSelected
+                              ? "border-primary bg-primary/5 glow-border"
+                              : "border-border bg-accent/20 hover:border-primary/30"
                           }
                         `}
                         whileHover={{ x: 4 }}
                         whileTap={{ scale: 0.98 }}
                       >
                         <div className="flex items-center gap-4">
-                          <div className={`
+                          <div
+                            className={`
                             w-10 h-10 rounded-lg flex items-center justify-center font-medium transition-all
-                            ${isSelected
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted/30 text-muted-foreground'
+                            ${
+                              isSelected
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted/30 text-muted-foreground"
                             }
-                          `}>
+                          `}
+                          >
                             {letter}
                           </div>
                           <span className="flex-1">{option}</span>
@@ -312,10 +387,12 @@ console.log(screenStream?.active);
               )}
 
               {/* Open-ended Response */}
-              {question.type === 'open-ended' && (
+              {question.type === "open-ended" && (
                 <div className="p-6 rounded-xl border border-border bg-accent/20 mb-8">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-sm text-muted-foreground">Your Response</p>
+                    <p className="text-sm text-muted-foreground">
+                      Your Response
+                    </p>
                     {isRecording && (
                       <motion.div
                         className="flex items-center gap-2 text-[var(--status-processing)]"
@@ -327,7 +404,9 @@ console.log(screenStream?.active);
                           animate={{ scale: [1, 1.2, 1] }}
                           transition={{ duration: 1, repeat: Infinity }}
                         />
-                        <span className="text-xs font-medium">Recording...</span>
+                        <span className="text-xs font-medium">
+                          Recording...
+                        </span>
                       </motion.div>
                     )}
                   </div>
@@ -335,7 +414,8 @@ console.log(screenStream?.active);
                   <div className="min-h-[120px] flex items-center justify-center mb-6">
                     {!isRecording ? (
                       <p className="text-sm text-muted-foreground/60 text-center">
-                        Click the microphone button to start recording your answer
+                        Click the microphone button to start recording your
+                        answer
                       </p>
                     ) : (
                       <div className="w-full">
@@ -360,14 +440,16 @@ console.log(screenStream?.active);
                   <div className="flex justify-center">
                     <motion.button
                       onClick={() => {
+                        console.log(isRecording, "state of recording");
                         setIsRecording(!isRecording);
-                        if (!isRecording) setSelectedAnswer('recorded');
+                        if (!isRecording) setSelectedAnswer("recorded");
                       }}
                       className={`
                         w-14 h-14 rounded-full flex items-center justify-center transition-all
-                        ${isRecording
-                          ? 'bg-destructive text-destructive-foreground shadow-lg shadow-destructive/30'
-                          : 'bg-primary text-primary-foreground shadow-lg shadow-primary/30'
+                        ${
+                          isRecording
+                            ? "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/30"
+                            : "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
                         }
                       `}
                       whileHover={{ scale: 1.05 }}
@@ -389,15 +471,18 @@ console.log(screenStream?.active);
                 disabled={!selectedAnswer}
                 className={`
                   w-full px-6 py-4 rounded-xl transition-all font-medium
-                  ${selectedAnswer
-                    ? 'bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20'
-                    : 'bg-muted text-muted-foreground cursor-not-allowed opacity-50'
+                  ${
+                    selectedAnswer
+                      ? "bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20"
+                      : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
                   }
                 `}
                 whileHover={selectedAnswer ? { scale: 1.01 } : {}}
                 whileTap={selectedAnswer ? { scale: 0.99 } : {}}
               >
-                {questionNumber === totalQuestions ? 'Complete Interview' : 'Next Question'}
+                {questionNumber === totalQuestions
+                  ? "Complete Interview"
+                  : "Next Question"}
               </motion.button>
             </div>
           </div>
