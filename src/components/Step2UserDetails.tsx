@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { motion } from "framer-motion";
 import { User } from "lucide-react";
+import { postJSON } from "../utils/api";
 
 interface Step2UserDetailsProps {
   initialData: {
@@ -27,29 +28,74 @@ export function Step2UserDetails({
   const email = initialData.email || "";
   const testId = initialData.testId || "";
 
+  const recaptchaToken = import.meta.env.VITE_RECAPTCHA_KEY as string;
+
+  /* ---------------- LOAD reCAPTCHA (FUNCTIONAL ONLY) ---------------- */
+  useEffect(() => {
+    if (!window.grecaptcha) {
+      const script = document.createElement("script");
+      script.src = `https://www.google.com/recaptcha/api.js?render=${recaptchaToken}`;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, [recaptchaToken]);
+
+  /* ---------------- EXECUTE reCAPTCHA ---------------- */
+  const executeRecaptcha = async (): Promise<string> => {
+    if (!window.grecaptcha) {
+      throw new Error("reCAPTCHA not ready");
+    }
+
+    return new Promise((resolve, reject) => {
+      window.grecaptcha.ready(() => {
+        window.grecaptcha
+          .execute(recaptchaToken, { action: "submit" })
+          .then(resolve)
+          .catch(reject);
+      });
+    });
+  };
+
   /* ---------------- SUBMIT ---------------- */
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!name || !email || !testId) return;
 
     setIsLoading(true);
 
-    /* ✅ Save to localStorage */
-    localStorage.setItem("candidate_name", name);
-    localStorage.setItem("candidate_email", email);
-    localStorage.setItem("test_id", testId);
+    try {
+      /* ✅ Get reCAPTCHA token */
+      const captchaToken = await executeRecaptcha();
 
-    /* ✅ Move to next step */
-    onNext({
-      name,
-      email,
-      testId,
-    });
+      /* ✅ Register API (WITH reCAPTCHA) */
+      const regResponse = await postJSON("/register/", {
+        name,
+        email,
+        test_id: testId,
+        recaptcha_token: captchaToken,
+      });
 
-    setIsLoading(false);
+      /* ✅ Persist required data */
+      localStorage.setItem("candidate_name", regResponse.name || name);
+      localStorage.setItem("candidate_email", email);
+      localStorage.setItem("test_id", regResponse.test_id || testId);
+      localStorage.setItem("candidate_id", regResponse.candidate_id);
+      localStorage.setItem("session_id", regResponse.session_id);
+
+      /* ✅ Move to next step (UNCHANGED) */
+      onNext({
+        name,
+        email,
+        testId,
+      });
+    } catch (err) {
+      console.error("Register failed:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  /* ---------------- UI (UNCHANGED) ---------------- */
+  /* ---------------- UI (UNCHANGED — NOT TOUCHED) ---------------- */
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <motion.div

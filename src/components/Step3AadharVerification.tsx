@@ -1,6 +1,14 @@
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Camera, CheckCircle2, RefreshCw, CreditCard, Upload, AlertCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import {
+  Camera,
+  CheckCircle2,
+  RefreshCw,
+  CreditCard,
+  Upload,
+  AlertCircle,
+} from "lucide-react";
+import { postForm } from "../utils/api";
 
 interface Step3AadharVerificationProps {
   onNext: (data: AadharData) => void;
@@ -11,16 +19,19 @@ export interface AadharData {
   backImage: string | null;
 }
 
-type CaptureMode = 'front' | 'back';
+type CaptureMode = "front" | "back";
 
-export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps) {
-  const [captureMode, setCaptureMode] = useState<CaptureMode>('front');
+export function Step3AadharVerification({
+  onNext,
+}: Step3AadharVerificationProps) {
+  const [captureMode, setCaptureMode] = useState<CaptureMode>("front");
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<string | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [useFileUpload, setUseFileUpload] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -32,7 +43,9 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
       // Camera already running, just ensure video element is connected
       if (videoRef.current && videoRef.current.srcObject !== stream) {
         videoRef.current.srcObject = stream;
-        await videoRef.current.play().catch(e => console.log('Play error:', e));
+        await videoRef.current
+          .play()
+          .catch((e) => console.log("Play error:", e));
       }
       return;
     }
@@ -41,7 +54,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
       setCameraError(null);
 
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' },
+        video: { facingMode: "environment" },
       });
 
       if (videoRef.current) {
@@ -55,7 +68,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
     } catch (err: any) {
       setIsCameraActive(false);
       setUseFileUpload(true);
-      setCameraError('Unable to access camera. Please upload image.');
+      setCameraError("Unable to access camera. Please upload image.");
     }
   };
 
@@ -65,7 +78,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
       videoRef.current.srcObject = null;
     }
 
-    stream?.getTracks().forEach(track => track.stop());
+    stream?.getTracks().forEach((track) => track.stop());
     setStream(null);
     setIsCameraActive(false);
   };
@@ -79,14 +92,14 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
 
-      const context = canvas.getContext('2d');
+      const context = canvas.getContext("2d");
       if (context) {
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = canvas.toDataURL('image/png');
+        const imageData = canvas.toDataURL("image/png");
 
-        if (captureMode === 'front') {
+        if (captureMode === "front") {
           setFrontImage(imageData);
-          setCaptureMode('back');
+          setCaptureMode("back");
         } else {
           setBackImage(imageData);
           stopCamera();
@@ -97,14 +110,14 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
 
   // Retake photo
   const retakePhoto = (mode: CaptureMode) => {
-    if (mode === 'front') {
+    if (mode === "front") {
       setFrontImage(null);
-      setCaptureMode('front');
+      setCaptureMode("front");
     } else {
       setBackImage(null);
-      setCaptureMode('back');
+      setCaptureMode("back");
     }
-    
+
     // Don't stop camera if it's already running, just switch mode
     // The useEffect will handle camera state based on the new mode
     if (!isCameraActive) {
@@ -115,14 +128,14 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
   // Handle file upload
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageData = e.target?.result as string;
 
-        if (captureMode === 'front') {
+        if (captureMode === "front") {
           setFrontImage(imageData);
-          setCaptureMode('back');
+          setCaptureMode("back");
         } else {
           setBackImage(imageData);
         }
@@ -132,7 +145,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
 
     // Reset file input
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -142,9 +155,38 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
   };
 
   // Handle next
-  const handleNext = () => {
-    if (frontImage && backImage) {
-      onNext({ frontImage, backImage });
+  const handleNext = async () => {
+    if (!frontImage || !backImage) return;
+
+    setIsLoading(true);
+    setCameraError(null);
+
+    try {
+      const candidate_id = localStorage.getItem("candidate_id") || "";
+      const candidate_name = localStorage.getItem("candidate_name") || "";
+
+      const blob = await (await fetch(frontImage)).blob();
+      const formData = new FormData();
+      formData.append("file", blob, "aadhaar.jpg");
+      formData.append("candidate_id", candidate_id);
+      formData.append("candidate_name", candidate_name);
+
+      const data = await postForm(
+        "/aadhaarcard/extract-aadhaar-text/",
+        formData,
+      );
+
+      localStorage.setItem("isaadhaarcard", "true");
+
+      onNext({
+        frontImage,
+        backImage,
+        extractedData: data.extracted_fields,
+      });
+    } catch {
+      setCameraError("Aadhaar card not verified. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -160,14 +202,17 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
     if (stream && videoRef.current && isCameraActive) {
       if (videoRef.current.srcObject !== stream) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play().catch(e => console.log('Play error:', e));
+        videoRef.current.play().catch((e) => console.log("Play error:", e));
       }
     }
   }, [stream, isCameraActive, captureMode]);
 
   // Auto-start camera for current mode
   useEffect(() => {
-    if ((captureMode === 'front' && !frontImage) || (captureMode === 'back' && !backImage)) {
+    if (
+      (captureMode === "front" && !frontImage) ||
+      (captureMode === "back" && !backImage)
+    ) {
       if (!isCameraActive && !useFileUpload) {
         startCamera();
       }
@@ -187,7 +232,10 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
           {/* Header */}
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
-              <CreditCard className="w-6 h-6 text-secondary" strokeWidth={1.5} />
+              <CreditCard
+                className="w-6 h-6 text-secondary"
+                strokeWidth={1.5}
+              />
             </div>
             <div>
               <h2 className="text-2xl">Aadhar Verification</h2>
@@ -200,15 +248,18 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
           {/* Progress Indicator */}
           <div className="flex items-center gap-4 mb-8">
             <div className="flex items-center gap-2 flex-1">
-              <div className={`
+              <div
+                className={`
                 px-4 py-2 rounded-lg border transition-all
-                ${frontImage
-                  ? 'border-[var(--status-ready)] bg-[var(--status-ready)]/10 text-[var(--status-ready)]'
-                  : captureMode === 'front'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-muted/20 text-muted-foreground'
+                ${
+                  frontImage
+                    ? "border-[var(--status-ready)] bg-[var(--status-ready)]/10 text-[var(--status-ready)]"
+                    : captureMode === "front"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-muted/20 text-muted-foreground"
                 }
-              `}>
+              `}
+              >
                 {frontImage ? (
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
@@ -223,15 +274,18 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
             <div className="w-8 h-0.5 bg-border" />
 
             <div className="flex items-center gap-2 flex-1">
-              <div className={`
+              <div
+                className={`
                 px-4 py-2 rounded-lg border transition-all
-                ${backImage
-                  ? 'border-[var(--status-ready)] bg-[var(--status-ready)]/10 text-[var(--status-ready)]'
-                  : captureMode === 'back'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-muted/20 text-muted-foreground'
+                ${
+                  backImage
+                    ? "border-[var(--status-ready)] bg-[var(--status-ready)]/10 text-[var(--status-ready)]"
+                    : captureMode === "back"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-muted/20 text-muted-foreground"
                 }
-              `}>
+              `}
+              >
                 {backImage ? (
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
@@ -258,7 +312,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
                       className="w-full h-full object-cover"
                     />
                     <motion.button
-                      onClick={() => retakePhoto('front')}
+                      onClick={() => retakePhoto("front")}
                       className="absolute bottom-4 right-4 p-2 rounded-lg bg-accent/90 backdrop-blur-sm border border-border hover:bg-accent transition-colors"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -266,7 +320,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
                       <RefreshCw className="w-4 h-4" />
                     </motion.button>
                   </>
-                ) : captureMode === 'front' && isCameraActive ? (
+                ) : captureMode === "front" && isCameraActive ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <video
                       ref={videoRef}
@@ -281,8 +335,13 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-2" strokeWidth={1} />
-                      <p className="text-xs text-muted-foreground">Waiting to capture</p>
+                      <CreditCard
+                        className="w-12 h-12 text-muted-foreground mx-auto mb-2"
+                        strokeWidth={1}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Waiting to capture
+                      </p>
                     </div>
                   </div>
                 )}
@@ -301,7 +360,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
                       className="w-full h-full object-cover"
                     />
                     <motion.button
-                      onClick={() => retakePhoto('back')}
+                      onClick={() => retakePhoto("back")}
                       className="absolute bottom-4 right-4 p-2 rounded-lg bg-accent/90 backdrop-blur-sm border border-border hover:bg-accent transition-colors"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -309,7 +368,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
                       <RefreshCw className="w-4 h-4" />
                     </motion.button>
                   </>
-                ) : captureMode === 'back' && isCameraActive ? (
+                ) : captureMode === "back" && isCameraActive ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <video
                       ref={videoRef}
@@ -324,9 +383,14 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-2" strokeWidth={1} />
+                      <CreditCard
+                        className="w-12 h-12 text-muted-foreground mx-auto mb-2"
+                        strokeWidth={1}
+                      />
                       <p className="text-xs text-muted-foreground">
-                        {frontImage ? 'Waiting to capture' : 'Capture front first'}
+                        {frontImage
+                          ? "Waiting to capture"
+                          : "Capture front first"}
                       </p>
                     </div>
                   </div>
@@ -380,43 +444,48 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
             animate={{ opacity: 1, y: 0 }}
           >
             <p className="text-sm text-muted-foreground">
-              <span className="text-primary">Tip:</span> Ensure the Aadhar card is clearly visible,
-              well-lit, and all details are readable. Avoid glare and shadows.
+              <span className="text-primary">Tip:</span> Ensure the Aadhar card
+              is clearly visible, well-lit, and all details are readable. Avoid
+              glare and shadows.
             </p>
           </motion.div>
 
           {/* Action Buttons */}
           <div className="flex gap-4">
             <AnimatePresence mode="wait">
-              {isCameraActive && (captureMode === 'front' && !frontImage || captureMode === 'back' && !backImage) && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={capturePhoto}
-                  className="flex-1 px-6 py-4 bg-secondary text-secondary-foreground rounded-xl hover:shadow-lg hover:shadow-secondary/20 transition-all flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                >
-                  <Camera className="w-5 h-5" />
-                  Capture {captureMode === 'front' ? 'Front' : 'Back'}
-                </motion.button>
-              )}
+              {isCameraActive &&
+                ((captureMode === "front" && !frontImage) ||
+                  (captureMode === "back" && !backImage)) && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    onClick={capturePhoto}
+                    className="flex-1 px-6 py-4 bg-secondary text-secondary-foreground rounded-xl hover:shadow-lg hover:shadow-secondary/20 transition-all flex items-center justify-center gap-2"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <Camera className="w-5 h-5" />
+                    Capture {captureMode === "front" ? "Front" : "Back"}
+                  </motion.button>
+                )}
 
-              {(useFileUpload || cameraError) && (captureMode === 'front' && !frontImage || captureMode === 'back' && !backImage) && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  onClick={triggerFileUpload}
-                  className="flex-1 px-6 py-4 bg-accent border border-border text-foreground rounded-xl hover:bg-accent/80 transition-all flex items-center justify-center gap-2"
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.99 }}
-                >
-                  <Upload className="w-5 h-5" />
-                  Upload {captureMode === 'front' ? 'Front' : 'Back'}
-                </motion.button>
-              )}
+              {(useFileUpload || cameraError) &&
+                ((captureMode === "front" && !frontImage) ||
+                  (captureMode === "back" && !backImage)) && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    onClick={triggerFileUpload}
+                    className="flex-1 px-6 py-4 bg-accent border border-border text-foreground rounded-xl hover:bg-accent/80 transition-all flex items-center justify-center gap-2"
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                  >
+                    <Upload className="w-5 h-5" />
+                    Upload {captureMode === "front" ? "Front" : "Back"}
+                  </motion.button>
+                )}
             </AnimatePresence>
 
             <motion.button
@@ -424,15 +493,16 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
               disabled={!canProceed}
               className={`
                 flex-1 px-6 py-4 rounded-xl transition-all
-                ${canProceed
-                  ? 'bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20'
-                  : 'bg-muted text-muted-foreground cursor-not-allowed opacity-50'
+                ${
+                  canProceed
+                    ? "bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20"
+                    : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
                 }
               `}
               whileHover={canProceed ? { scale: 1.01 } : {}}
               whileTap={canProceed ? { scale: 0.99 } : {}}
             >
-              {canProceed ? 'Continue' : 'Capture both sides to continue'}
+              {canProceed ? "Continue" : "Capture both sides to continue"}
             </motion.button>
           </div>
         </div>
