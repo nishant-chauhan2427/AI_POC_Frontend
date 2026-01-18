@@ -95,7 +95,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(10);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -206,6 +206,7 @@ export default function App() {
   /* ---------------- RENDER ---------------- */
   return (
     <div className="min-h-screen w-full bg-background text-foreground">
+      <Logo ></Logo>
       <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
 
       <AnimatePresence mode="wait">

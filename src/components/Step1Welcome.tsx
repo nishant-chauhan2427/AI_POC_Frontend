@@ -23,7 +23,7 @@ export function Step1Welcome({ onNext }: Step1WelcomeProps) {
         </motion.div>
 
         <h1 className="text-5xl mb-6">
-          Welcome to the AI<br />Interview Experience
+          Welcome to <br />RAPYD EXCHANGE
         </h1>
 
         <p className="text-lg text-muted-foreground mb-12 max-w-xl mx-auto">

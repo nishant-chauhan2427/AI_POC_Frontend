@@ -164,6 +164,13 @@ export function Step4PhotoCapture({
           ) : (
             <div className="space-y-3">
               <button
+                onClick={handleRetake}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <RotateCw className="w-5 h-5" />
+                Retake Photo
+              </button>
+              <button
                 onClick={handleContinue}
                 className="w-full py-4 rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-2"
               >
@@ -171,13 +178,7 @@ export function Step4PhotoCapture({
                 Continue
               </button>
 
-              <button
-                onClick={handleRetake}
-                className="w-full py-4 rounded-xl border bg-accent/20 flex items-center justify-center gap-2"
-              >
-                <RotateCw className="w-5 h-5" />
-                Retake Photo
-              </button>
+              
             </div>
           )}
 
