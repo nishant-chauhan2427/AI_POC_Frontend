@@ -14,7 +14,6 @@ interface Step4SystemCheckProps {
   onNext: (streams: { camera: MediaStream; screen: MediaStream }) => void;
 }
 
-
 type CheckStatus = "pending" | "checking" | "success" | "failed";
 
 interface SystemCheck {
@@ -27,10 +26,20 @@ interface SystemCheck {
 
 export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
   const [checks, setChecks] = useState<SystemCheck[]>([
-    { id: "microphone", label: "Microphone Access", icon: Mic, status: "pending" },
+    {
+      id: "microphone",
+      label: "Microphone Access",
+      icon: Mic,
+      status: "pending",
+    },
     { id: "camera", label: "Camera Access", icon: Video, status: "pending" },
     { id: "audio", label: "Audio Output", icon: Volume2, status: "pending" },
-    { id: "screen", label: "Screen Share (Entire Screen)", icon: Monitor, status: "pending" },
+    {
+      id: "screen",
+      label: "Screen Share (Entire Screen)",
+      icon: Monitor,
+      status: "pending",
+    },
   ]);
 
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -42,9 +51,15 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
 
   /* ---------------- UTIL ---------------- */
 
-  const update = (id: SystemCheck["id"], status: CheckStatus, error?: string) => {
-    setChecks(prev =>
-      prev.map(c => (c.id === id ? { ...c, status, errorMessage: error } : c))
+  const update = (
+    id: SystemCheck["id"],
+    status: CheckStatus,
+    error?: string,
+  ) => {
+    setChecks((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, status, errorMessage: error } : c,
+      ),
     );
   };
 
@@ -54,7 +69,7 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
     update("microphone", "checking");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(t => t.stop());
+      stream.getTracks().forEach((t) => t.stop());
       update("microphone", "success");
     } catch {
       update("microphone", "failed", "Microphone permission denied");
@@ -80,7 +95,7 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
     update("audio", "checking");
     try {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      const ok = devices.some(d => d.kind === "audiooutput");
+      const ok = devices.some((d) => d.kind === "audiooutput");
       ok
         ? update("audio", "success")
         : update("audio", "failed", "No audio output detected");
@@ -90,34 +105,33 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
   };
 
   const checkScreen = async () => {
-  update("screen", "checking");
+    update("screen", "checking");
 
-  try {
-    const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { displaySurface: "monitor", cursor: "always" },
-      audio: false,
-    });
-
-    setScreenStream(stream);
-    setIsRecording(true);
-    update("screen", "success");
-
-    // 🔥 THIS IS THE KEY LINE
-    requestAnimationFrame(() => {
-      onNext({
-        camera: cameraStream!,
-        screen: stream,
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: { displaySurface: "monitor", cursor: "always" },
+        audio: false,
       });
-    });
 
-    stream.getVideoTracks()[0].onended = () => {
-      setIsRecording(false);
-    };
-  } catch {
-    update("screen", "failed", 'Please select "Entire Screen"');
-  }
-};
+      setScreenStream(stream);
+      setIsRecording(true);
+      update("screen", "success");
 
+      // 🔥 THIS IS THE KEY LINE
+      requestAnimationFrame(() => {
+        onNext({
+          camera: cameraStream!,
+          screen: stream,
+        });
+      });
+
+      stream.getVideoTracks()[0].onended = () => {
+        setIsRecording(false);
+      };
+    } catch {
+      update("screen", "failed", 'Please select "Entire Screen"');
+    }
+  };
 
   /* ---------------- RUN CHECKS ---------------- */
 
@@ -143,20 +157,19 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
 
   useEffect(() => {
     const done = checks.every(
-      c => c.status === "success" || c.status === "failed"
+      (c) => c.status === "success" || c.status === "failed",
     );
     if (done) setCanProceed(true);
   }, [checks]);
 
   const handleContinue = () => {
-  if (!cameraStream || !screenStream) return;
+    if (!cameraStream || !screenStream) return;
 
-  onNext({
-    camera: cameraStream,
-    screen: screenStream,
-  });
-};
-
+    onNext({
+      camera: cameraStream,
+      screen: screenStream,
+    });
+  };
 
   /* ---------------- UI ---------------- */
 
@@ -173,7 +186,13 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
         {/* CAMERA PREVIEW */}
         <div className="aspect-video rounded-xl overflow-hidden border mb-6">
           {cameraStream ? (
-            <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover" />
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              playsInline
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="h-full flex items-center justify-center text-muted-foreground">
               Waiting for camera…
@@ -183,7 +202,7 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
 
         {/* CHECK LIST */}
         <div className="space-y-3 mb-6">
-          {checks.map(c => {
+          {checks.map((c) => {
             const Icon = c.icon;
             return (
               <div
@@ -217,13 +236,16 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
           })}
         </div>
         <motion.button
-  onClick={checkScreen}
-  disabled={checks.find(c => c.id === "screen")?.status === "success"}
-  className="w-full mb-4 py-4 rounded-xl g-primary font-medium text-primary-foreground"
->
-  Start Screen Sharing & Continue to Interview
-</motion.button>
-
+          onClick={checkScreen}
+          disabled={checks.find((c) => c.id === "screen")?.status === "success"}
+          className={`w-full py-4 rounded-xl font-medium ${
+            checks.find((c) => c.id === "screen")?.status === "success"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground opacity-50"
+          }`}
+        >
+          Start Screen Sharing & Continue to Interview
+        </motion.button>
 
         {/* <motion.button
           onClick={handleContinue}
