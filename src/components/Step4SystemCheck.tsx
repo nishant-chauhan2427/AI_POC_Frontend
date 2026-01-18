@@ -14,6 +14,7 @@ interface Step4SystemCheckProps {
   onNext: (streams: { camera: MediaStream; screen: MediaStream }) => void;
 }
 
+
 type CheckStatus = "pending" | "checking" | "success" | "failed";
 
 interface SystemCheck {
@@ -89,25 +90,34 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
   };
 
   const checkScreen = async () => {
-    update("screen", "checking");
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { displaySurface: "monitor", cursor: "always" },
-        audio: false,
+  update("screen", "checking");
+
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { displaySurface: "monitor", cursor: "always" },
+      audio: false,
+    });
+
+    setScreenStream(stream);
+    setIsRecording(true);
+    update("screen", "success");
+
+    // 🔥 THIS IS THE KEY LINE
+    requestAnimationFrame(() => {
+      onNext({
+        camera: cameraStream!,
+        screen: stream,
       });
+    });
 
-      setScreenStream(stream);
-      setIsRecording(true);
-      update("screen", "success");
+    stream.getVideoTracks()[0].onended = () => {
+      setIsRecording(false);
+    };
+  } catch {
+    update("screen", "failed", 'Please select "Entire Screen"');
+  }
+};
 
-      stream.getVideoTracks()[0].onended = () => {
-        update("screen", "failed", "Screen sharing stopped");
-        setIsRecording(false);
-      };
-    } catch {
-      update("screen", "failed", 'Please select "Entire Screen"');
-    }
-  };
 
   /* ---------------- RUN CHECKS ---------------- */
 
@@ -116,7 +126,7 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
       await checkMicrophone();
       await checkCamera();
       await checkAudio();
-      await checkScreen();
+      // await checkScreen();
     })();
   }, []);
 
@@ -139,9 +149,14 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
   }, [checks]);
 
   const handleContinue = () => {
-    if (!cameraStream || !screenStream) return;
-    onNext({ camera: cameraStream, screen: screenStream });
-  };
+  if (!cameraStream || !screenStream) return;
+
+  onNext({
+    camera: cameraStream,
+    screen: screenStream,
+  });
+};
+
 
   /* ---------------- UI ---------------- */
 
@@ -201,8 +216,16 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
             );
           })}
         </div>
-
         <motion.button
+  onClick={checkScreen}
+  disabled={checks.find(c => c.id === "screen")?.status === "success"}
+  className="w-full mb-4 py-4 rounded-xl g-primary font-medium text-primary-foreground"
+>
+  Start Screen Sharing & Continue to Interview
+</motion.button>
+
+
+        {/* <motion.button
           onClick={handleContinue}
           disabled={!canProceed}
           className={`w-full py-4 rounded-xl font-medium ${
@@ -212,7 +235,7 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
           }`}
         >
           Continue to Interview
-        </motion.button>
+        </motion.button> */}
       </div>
     </div>
   );

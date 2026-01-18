@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Brain, Clock, Mic, MicOff, Video, AlertTriangle, Eye, Radio, Monitor } from 'lucide-react';
+import { log } from 'console';
 
 interface Step6QuestionProps {
   questionNumber: number;
@@ -8,6 +9,8 @@ interface Step6QuestionProps {
   question: QuestionData;
   onAnswer: (answer: string, timeSpent: number) => void;
   systemReady: boolean;
+    cameraStream: MediaStream;
+  screenStream: MediaStream;
 }
 
 
@@ -18,15 +21,17 @@ export interface QuestionData {
   options?: string[];
 }
 
-export function Step6Question({ questionNumber, totalQuestions, question, onAnswer, systemReady }: Step6QuestionProps) {
+export function Step6Question({ questionNumber, totalQuestions, question, onAnswer, systemReady, cameraStream, screenStream }: Step6QuestionProps) {
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [isRecording, setIsRecording] = useState(false);
   const [timeSpent, setTimeSpent] = useState(0);
   const [showTabAlert, setShowTabAlert] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  // const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const recording = screenStream.active;
   
-
+// log(screenStream);
+console.log(screenStream.active);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -37,28 +42,13 @@ export function Step6Question({ questionNumber, totalQuestions, question, onAnsw
   }, []);
 
   useEffect(() => {
-    if (!systemReady) return;
+  if (videoRef.current && cameraStream) {
+    videoRef.current.srcObject = cameraStream;
+    videoRef.current.play().catch(() => {});
+  }
+}, [cameraStream]);
 
-    const startCamera = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user' },
-        audio: false,
-      });
 
-      setCameraStream(stream);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-    };
-
-    startCamera();
-
-    return () => {
-      cameraStream?.getTracks().forEach(t => t.stop());
-    };
-  }, [systemReady]);
 
 
   // Simulate tab switch detection (just for UI demo)
@@ -91,6 +81,10 @@ export function Step6Question({ questionNumber, totalQuestions, question, onAnsw
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
       {/* Tab Switch Alert */}
+
+      {recording && (
+        <div className="fixed inset-0 border-[6px] border-red-500 pointer-events-none z-50" />
+      )}
       <AnimatePresence>
         {showTabAlert && (
           <motion.div

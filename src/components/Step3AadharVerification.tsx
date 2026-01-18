@@ -276,7 +276,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
                       className="w-full h-full object-cover"
                     />
                     {/* Scan line effect */}
-                    <div className="scan-line absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent opacity-50" />
+                    {/* <div className="scan-line absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent opacity-50" /> */}
                   </div>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -319,7 +319,7 @@ export function Step3AadharVerification({ onNext }: Step3AadharVerificationProps
                       className="w-full h-full object-cover"
                     />
                     {/* Scan line effect */}
-                    <div className="scan-line absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent opacity-50" />
+                    {/* <div className="scan-line absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent opacity-50" /> */}
                   </div>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">

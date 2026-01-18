@@ -117,10 +117,24 @@ const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
     handleNext();
   };
 
-  const handleAadharVerification = (data: AadharData) => {
+  const handleAadharVerification = async (data: AadharData) => {
     setAadharData(data);
+    await startCamera();
     handleNext();
   };
+
+  const handleSystemCheckComplete = ({
+  camera,
+  screen,
+}: {
+  camera: MediaStream;
+  screen: MediaStream;
+}) => {
+  setCameraStream(camera);
+  setScreenStream(screen);
+  setCurrentStep(6);
+};
+
 
   const handlePhotoCapture = (photo: string) => {
     setPhotoData(photo);
@@ -195,7 +209,7 @@ const startScreenShare = async () => {
   };
 
   const goToInterview = async () => {
-    await startScreenShare(); // start screen before questions
+    // await startScreenShare(); // start screen before questions
     setCurrentStep(7);
   };
 
@@ -264,7 +278,8 @@ const startScreenShare = async () => {
             exit={{ opacity: 0, x: -100 }}
             transition={{ duration: 0.5 }}
           >
-            <Step4SystemCheck onNext={() => setCurrentStep(6)} />
+            <Step4SystemCheck onNext={handleSystemCheckComplete} />
+
           </motion.div>
         )}
 
