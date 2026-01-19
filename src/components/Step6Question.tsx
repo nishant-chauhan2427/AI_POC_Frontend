@@ -17,7 +17,12 @@ interface Step6QuestionProps {
   questionNumber: number;
   totalQuestions: number;
   question: QuestionData;
-  onAnswer: (answer: string, timeSpent: number) => void;
+  onAnswer: (payload: {
+    questionId: string;
+    transcript: string;
+    timeSpent: number;
+  }) => void;
+
   systemReady: boolean;
   cameraStream: MediaStream;
   screenStream: MediaStream;
@@ -27,6 +32,7 @@ export interface QuestionData {
   id: string;
   text: string;
   type: "multiple-choice" | "open-ended";
+  expected_answer?: string;
   options?: string[];
 }
 
@@ -44,6 +50,11 @@ export function Step6Question({
   const [timeSpent, setTimeSpent] = useState(0);
   const [showTabAlert, setShowTabAlert] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+
+  console.log("Rendering question:", question);
 
   /* ---------------- TIMER ---------------- */
   useEffect(() => {
@@ -104,9 +115,32 @@ export function Step6Question({
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const toggleRecording = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
+    } else {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+
+      audioChunksRef.current = [];
+      recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        setAudioBlob(blob);
+        setSelectedAnswer("audio-ready"); // enable submit
+      };
+
+      recorder.start();
+      mediaRecorderRef.current = recorder;
+      setIsRecording(true);
+    }
+  };
+
   /* ---------------- SUBMIT (OLD submit_answer API) ---------------- */
   const handleSubmit = async () => {
-    if (!selectedAnswer) return;
+    if (!audioBlob) return;
 
     try {
       const formData = new FormData();
@@ -116,15 +150,28 @@ export function Step6Question({
       );
       formData.append("question_id", question.id);
       formData.append("question", question.text);
-      formData.append("answer", selectedAnswer);
+      formData.append("expected_answer", question.expected_answer || "");
       formData.append("session_id", localStorage.getItem("session_id") || "");
 
-      await fetch(`${API_BASE}/questions/submit_answer`, {
+      // 🎧 ATTACH REAL AUDIO FILE
+      const audioFile = new File([audioBlob], `answer_${question.id}.webm`, {
+        type: "audio/webm",
+      });
+      formData.append("audio_file", audioFile);
+
+      const res = await fetch(`${API_BASE}/questions/submit_answer`, {
         method: "POST",
         body: formData,
       });
 
-      onAnswer(selectedAnswer, timeSpent);
+      if (!res.ok) throw new Error("submit_answer failed");
+
+      // ✅ Move to next only AFTER upload
+      onAnswer({
+        questionId: question.id,
+        transcript: "audio-file",
+        timeSpent,
+      });
     } catch (e) {
       console.error("submit_answer failed", e);
     }
@@ -439,11 +486,7 @@ export function Step6Question({
 
                   <div className="flex justify-center">
                     <motion.button
-                      onClick={() => {
-                        console.log(isRecording, "state of recording");
-                        setIsRecording(!isRecording);
-                        if (!isRecording) setSelectedAnswer("recorded");
-                      }}
+                      onClick={toggleRecording}
                       className={`
                         w-14 h-14 rounded-full flex items-center justify-center transition-all
                         ${

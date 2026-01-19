@@ -95,7 +95,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(5);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -116,7 +116,9 @@ const [reportSummary, setReportSummary] = useState(null);
 
 
   const totalSteps = 10;
-  const questions = mockQuestions.default;
+  // const questions = mockQuestions.default;
+  const [questions, setQuestions] = useState<QuestionData[]>([]);
+
 
   /* ---------------- PARSE URL ONCE ---------------- */
   useEffect(() => {
@@ -147,8 +149,75 @@ const [reportSummary, setReportSummary] = useState(null);
     setInitialUserData({ name, email, testId });
   }, []);
 
+  const validateEmailLink = async (email: string) => {
+  const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+  const res = await fetch(
+    `${API_BASE}/link/validate?email=${encodeURIComponent(email)}`
+  );
+
+  if (!res.ok) {
+    throw new Error("Invalid or expired link");
+  }
+
+  return res.json();
+};
+
+const fetchInterviewQuestions = async (testId: string) => {
+  try {
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+    const res = await fetch(
+      `${API_BASE}/testquestions/qa_test/${testId}`,
+      { headers: { accept: "application/json" } }
+    );
+
+    if (!res.ok) {
+      throw new Error("Failed to fetch questions");
+    }
+
+    const json = await res.json();
+
+    if (json.status_code !== 200) {
+      throw new Error("Invalid question response");
+    }
+
+    // 🔁 Map API → UI format
+    const mappedQuestions = json.data.map((q: any) => ({
+      id: q.question_id,
+      text: q.question_text,
+      expected_answer: q.answers?.[0]?.answer_text,
+      type: "open-ended", // API gives reference answers, not MCQs
+    }));
+
+    setQuestions(mappedQuestions);
+  } catch (err) {
+    console.error("Question fetch failed:", err);
+    alert("Failed to load interview questions.");
+  }
+};
+
+
   /* ---------------- HELPERS ---------------- */
   const handleNext = () => setCurrentStep((s) => s + 1);
+  
+  const handleStep1Next = async () => {
+  try {
+    if (!initialUserData?.email) {
+      throw new Error("Email missing in URL");
+    }
+
+    // 🔥 VALIDATE EMAIL FROM URL
+    await validateEmailLink(initialUserData.email);
+
+    // ✅ Proceed only if validation succeeds
+    setCurrentStep(2);
+  } catch (err) {
+    console.error("Link validation failed:", err);
+    alert("This interview link is invalid or expired.");
+  }
+};
+
 
   const handleUserDetails = (data) => {
     setUserDetails(data);
@@ -248,19 +317,23 @@ const handleInterviewComplete = async () => {
 
 
 
-  const handleAnswer = (answer, timeSpent) => {
-    const question = questions[currentQuestionIndex];
-    setAnswers((prev) => [
-      ...prev,
-      { question: question.text, answer, time: timeSpent },
-    ]);
+  const handleAnswer = ({ questionId, transcript, timeSpent }) => {
+  setAnswers((prev) => [
+    ...prev,
+    {
+      questionId,
+      answer: transcript,
+      time: timeSpent,
+    },
+  ]);
 
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex((i) => i + 1);
-    } else {
-      handleNext();
-    }
-  };
+  if (currentQuestionIndex < questions.length - 1) {
+    setCurrentQuestionIndex((i) => i + 1);
+  } else {
+    handleNext();
+  }
+};
+
 
   const handleRestart = () => {
     setCurrentStep(1);
@@ -298,7 +371,7 @@ const handleInterviewComplete = async () => {
       <AnimatePresence mode="wait">
         {currentStep === 1 && (
           <motion.div key="step1">
-            <Step1Welcome onNext={handleNext} />
+            <Step1Welcome onNext={handleStep1Next} />
           </motion.div>
         )}
 
@@ -334,7 +407,13 @@ const handleInterviewComplete = async () => {
 
         {currentStep === 6 && (
           <motion.div key="step6">
-            <Step5InterviewReady onNext={() => setCurrentStep(7)} />
+            <Step5InterviewReady
+  onNext={async () => {
+    await fetchInterviewQuestions(initialUserData?.testId);
+    setCurrentStep(7);
+  }}
+/>
+
           </motion.div>
         )}
 
