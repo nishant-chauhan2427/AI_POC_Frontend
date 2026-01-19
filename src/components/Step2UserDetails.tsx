@@ -68,7 +68,7 @@ export function Step2UserDetails({
       const captchaToken = await executeRecaptcha();
 
       /* ✅ Register API (WITH reCAPTCHA) */
-      const regResponse = await postJSON("/register/", {
+      const regResponse = await postJSON("/register/candidate", {
         name,
         email,
         test_id: testId,

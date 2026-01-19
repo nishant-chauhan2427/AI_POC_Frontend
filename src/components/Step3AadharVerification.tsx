@@ -172,9 +172,12 @@ export function Step3AadharVerification({
       formData.append("candidate_name", candidate_name);
 
       const data = await postForm(
-        "/aadhaarcard/extract-aadhaar-text/",
+        "/auth/upload-aadhaar-card",
         formData,
       );
+
+      console.log(data, "aadhaar response");
+      
 
       localStorage.setItem("isaadhaarcard", "true");
 

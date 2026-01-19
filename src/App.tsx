@@ -95,7 +95,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(5);
+  const [currentStep, setCurrentStep] = useState(3);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -184,7 +184,7 @@ const handlePhotoCapture = async (photo: string) => {
 
     // 🔹 REAL API CALL (replace URL if needed)
     const response = await fetch(
-      `${API_BASE}/aadhaarcard/upload-candidate-image/`,
+      `${API_BASE}/auth/upload-candidate-image`,
       {
         method: "POST",
         body: formData,
