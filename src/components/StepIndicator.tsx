@@ -7,7 +7,7 @@ interface StepIndicatorProps {
 
 export function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
   return (
-    <div className="fixed left-8 top-1/2 -translate-y-1/2 z-50 hidden lg:block">
+    <div className="fixed left-8 top-1/2 -translate-y-1/2 z-50 lg:block">
       <div className="flex flex-col gap-3">
         {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => {
           const isActive = step === currentStep;
