@@ -312,7 +312,8 @@ useEffect(() => {
     }
   }, [captureMode, frontImage, backImage]);
 
-  const canProceed = frontImage && backImage;
+  const canProceed = frontImage && backImage && !isLoading;
+
 
  function AadhaarFrameOverlay() {
   const borderColor = isAligned
@@ -640,21 +641,32 @@ useEffect(() => {
             </AnimatePresence>
 
             <motion.button
-              onClick={handleNext}
-              disabled={!canProceed}
-              className={`
-                flex-1 px-6 py-4 rounded-xl transition-all
-                ${
-                  canProceed
-                    ? "bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20"
-                    : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                }
-              `}
-              whileHover={canProceed ? { scale: 1.01 } : {}}
-              whileTap={canProceed ? { scale: 0.99 } : {}}
-            >
-              {canProceed ? "Continue" : "Capture both sides to continue"}
-            </motion.button>
+  onClick={handleNext}
+  disabled={!canProceed}
+  className={`
+    flex-1 px-6 py-4 rounded-xl transition-all
+    flex items-center justify-center gap-2
+    ${
+      canProceed
+        ? "bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20"
+        : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
+    }
+  `}
+  whileHover={canProceed ? { scale: 1.01 } : {}}
+  whileTap={canProceed ? { scale: 0.99 } : {}}
+>
+  {isLoading ? (
+    <>
+      <RefreshCw className="w-5 h-5 animate-spin" />
+      Verifying Aadhaar…
+    </>
+  ) : canProceed ? (
+    "Continue"
+  ) : (
+    "Capture both sides to continue"
+  )}
+</motion.button>
+
           </div>
         </div>
       </motion.div>

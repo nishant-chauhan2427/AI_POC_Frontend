@@ -14,6 +14,7 @@ import { Step6Question } from "./components/Step6Question";
 import { Step7Completion } from "./components/Step7Completion";
 import { Step8Results } from "./components/Step8Results";
 import { Step9ThankYou } from "./components/Step9ThankYou";
+import { postForm } from "./utils/api";
 
 /* ---------------- MOCK QUESTIONS ---------------- */
 const mockQuestions: Record<string, QuestionData[]> = {
@@ -95,7 +96,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(4);
+  const [currentStep, setCurrentStep] = useState(1);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -232,45 +233,50 @@ export default function App() {
   };
 
   // ✅ CHANGE: Upload candidate photo after capture
-  const handlePhotoCapture = async (photo: string) => {
-    try {
-      const API_BASE = import.meta.env.VITE_API_BASE_URL;
-      // 🔹 Convert base64 → Blob
-      const blob = await fetch(photo).then((r) => r.blob());
+  
+const handlePhotoCapture = async (photo: string) => {
+  try {
+    // 🔹 Convert base64 → Blob
+    const blob = await fetch(photo).then((r) => r.blob());
 
-      // 🔹 Prepare form data
-      const formData = new FormData();
-      formData.append("file", blob, "candidate_photo.png");
-      formData.append(
-        "candidate_id",
-        localStorage.getItem("candidate_id") || "",
-      );
+    // 🔹 Prepare form data
+    const formData = new FormData();
+    formData.append("file", blob, "candidate_photo.png");
+    formData.append(
+      "candidate_id",
+      localStorage.getItem("candidate_id") || "",
+    );
 
-      // 🔹 REAL API CALL (replace URL if needed)
-      const response = await fetch(`${API_BASE}/auth/upload-candidate-image`, {
-        method: "POST",
-        body: formData,
-      });
+    // 🔥 AXIOS API CALL (centralized error handling)
+    const data = await postForm(
+      "/auth/upload-candidate-image",
+      formData,
+    );
 
-      console.log("Photo upload response:", response);
+    console.log("Photo upload success:", data);
 
-      if (!response.ok) {
-        throw new Error("Photo upload failed");
-      }
+    // 🔹 Save success flag
+    localStorage.setItem("iscandidatephoto", "true");
 
-      // 🔹 Save success flag (used later)
-      localStorage.setItem("iscandidatephoto", "true");
+    // 🔹 Store photo locally if needed
+    setPhotoData(photo);
 
-      // 🔹 Store photo locally if needed
-      setPhotoData(photo);
+    toast.success("Photo uploaded successfully");
 
-      // ✅ Move to NEXT STEP (System Check)
-      handleNext();
-    } catch (error) {
-      console.error("Photo upload error:", error);
-      alert("Failed to upload photo. Please retake.");
-    }
-  };
+    // ✅ Move to NEXT STEP
+    handleNext();
+  } catch (err: any) {
+    console.error("Photo upload error:", err);
+
+    // 🎯 Show REAL backend error
+    const message =
+      err instanceof Error
+        ? err.message
+        : "Failed to upload photo. Please try again.";
+
+    toast.error(message);
+  }
+};
 
   // ✅ CHANGE: Fetch real report summary before Step8Results
   const handleInterviewComplete = async () => {
