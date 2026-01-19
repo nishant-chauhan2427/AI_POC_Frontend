@@ -253,8 +253,10 @@ const lastViolationTsRef = useRef(0);
         body: formData,
       });
 
-      const data = await res.json();
+      console.log(res,"stt");
 
+      const data = await res.json();
+      console.log(data,"data for the stt");
       if (!res.ok) {
         throw new Error(data?.message || "Transcription failed");
       }
