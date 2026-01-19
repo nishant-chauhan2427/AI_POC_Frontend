@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 import { decryptValue } from "./utils/decrypt";
-
+import { Toaster, toast } from "react-hot-toast";
 import { StepIndicator } from "./components/StepIndicator";
 import { Step1Welcome } from "./components/Step1Welcome";
 import { Step2UserDetails } from "./components/Step2UserDetails";
@@ -95,7 +95,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(3);
+  const [currentStep, setCurrentStep] = useState(4);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -252,6 +252,8 @@ export default function App() {
         body: formData,
       });
 
+      console.log("Photo upload response:", response);
+
       if (!response.ok) {
         throw new Error("Photo upload failed");
       }
@@ -345,6 +347,18 @@ const data = await res.json();
 
   /* ---------------- RENDER ---------------- */
   return (
+    <>
+    <Toaster
+      position="top-right"
+      toastOptions={{
+        duration: 4000,
+        style: {
+          background: "#111827",
+          color: "#fff",
+          borderRadius: "10px",
+        },
+      }}
+    />
     <div className="min-h-screen w-full bg-background text-foreground px-4 py-4">
       <header className="fixed top-4 left-12">
         <motion.div className="flex justify-start  items-center">
@@ -450,5 +464,6 @@ const data = await res.json();
         />
       </motion.div>
     </div>
+    </>
   );
 }

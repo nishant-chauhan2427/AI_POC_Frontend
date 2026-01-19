@@ -9,6 +9,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { postForm } from "../utils/api";
+import { toast } from "react-hot-toast";
 
 interface Step3AadharVerificationProps {
   onNext: (data: AadharData) => void;
@@ -250,7 +251,9 @@ useEffect(() => {
         "/auth/upload-aadhaar-card",
         formData,
       );
-
+      if(!data.ok)(
+        console.log(data.text,"fsdgfhgjh")
+      )
       console.log(data, "aadhaar response");
       
 
@@ -261,9 +264,21 @@ useEffect(() => {
         backImage,
         extractedData: data.extracted_fields,
       });
-    } catch {
-      setCameraError("Aadhaar card not verified. Please try again.");
-    } finally {
+    }catch (err: any) {
+  console.error("Aadhaar upload failed:", err);
+
+  // Default fallback
+  let message = "Aadhaar verification failed. Please try again.";
+
+  // Our API utilities always throw Error with message
+  if (err instanceof Error) {
+    message = err.message;
+  }
+
+  setCameraError(message);
+  toast.error(message);
+}
+ finally {
       setIsLoading(false);
     }
   };

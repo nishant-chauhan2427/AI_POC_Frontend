@@ -55,8 +55,9 @@ export function Step6Question({
   const audioChunksRef = useRef<Blob[]>([]);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // console.log("Rendering question:", question);
+  const [transcript, setTranscript] = useState("");
+  const [showTranscript, setShowTranscript] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   /* ---------------- TIMER ---------------- */
   useEffect(() => {
@@ -122,16 +123,24 @@ export function Step6Question({
       mediaRecorderRef.current?.stop();
       setIsRecording(false);
     } else {
+      // Reset states when starting new recording
+      setTranscript("");
+      setShowTranscript(false);
+      setAudioBlob(null);
+      setSelectedAnswer("");
+      
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
 
       audioChunksRef.current = [];
       recorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
 
-      recorder.onstop = () => {
+      recorder.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         setAudioBlob(blob);
-        setSelectedAnswer("audio-ready"); // enable submit
+        
+        // Call STT API immediately after recording stops
+        await transcribeAudio(blob);
       };
 
       recorder.start();
@@ -140,9 +149,50 @@ export function Step6Question({
     }
   };
 
+  /* ---------------- STT API CALL ---------------- */
+  const transcribeAudio = async (blob: Blob) => {
+    setIsTranscribing(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append("candidate_id", localStorage.getItem("candidate_id") || "");
+      formData.append("question_id", question.id);
+      formData.append("question", question.text);
+      formData.append("expected_answer", question.expected_answer || "");
+      
+      const audioFile = new File([blob], `stt_${question.id}.webm`, {
+        type: "audio/webm",
+      });
+      formData.append("audio_file", audioFile);
+
+      const res = await fetch(`${API_BASE}/questions/stt_only`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || "Transcription failed");
+      }
+
+      // Show transcript to user
+      setTranscript(data?.transcript || "");
+      setShowTranscript(true);
+      
+      toast.success("Transcription completed!");
+    } catch (err: any) {
+      console.error("STT failed", err);
+      toast.error(err?.message || "Failed to transcribe audio");
+      setShowTranscript(false);
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
   /* ---------------- SUBMIT (OLD submit_answer API) ---------------- */
   const handleSubmit = async () => {
-    if (!audioBlob || isSubmitting) return;
+    if (!audioBlob || isSubmitting || !showTranscript) return;
 
     setIsSubmitting(true);
 
@@ -175,14 +225,13 @@ export function Step6Question({
         throw new Error(data?.message || "Answer submission failed");
       }
 
-      // ✅ SUCCESS TOAST (from API if exists)
       toast.success(data?.message || "Answer submitted successfully", {
         id: toastId,
       });
 
       onAnswer({
         questionId: question.id,
-        transcript: "audio-file",
+        transcript: transcript,
         timeSpent,
       });
     } catch (err: any) {
@@ -194,12 +243,18 @@ export function Step6Question({
     }
   };
 
+  const handleRetake = () => {
+    setAudioBlob(null);
+    setTranscript("");
+    setShowTranscript(false);
+    setSelectedAnswer("");
+  };
+
   const progress = (questionNumber / totalQuestions) * 100;
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-background">
       {/* Tab Switch Alert */}
-
       <AnimatePresence>
         {showTabAlert && (
           <motion.div
@@ -397,9 +452,6 @@ export function Step6Question({
                   <Brain className="w-6 h-6 text-primary" strokeWidth={1.5} />
                 </div>
                 <div className="flex-1">
-                  {/* <p className="text-xs text-muted-foreground mb-3 tracking-wider">
-                    PRAGYAN AI
-                  </p> */}
                   <h2 className="text-2xl leading-relaxed">{question.text}</h2>
                 </div>
               </div>
@@ -473,15 +525,31 @@ export function Step6Question({
                         </span>
                       </motion.div>
                     )}
+                    {isTranscribing && (
+                      <motion.div
+                        className="flex items-center gap-2 text-primary"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                      >
+                        <motion.div
+                          className="w-2 h-2 rounded-full bg-primary"
+                          animate={{ scale: [1, 1.2, 1] }}
+                          transition={{ duration: 1, repeat: Infinity }}
+                        />
+                        <span className="text-xs font-medium">
+                          Transcribing...
+                        </span>
+                      </motion.div>
+                    )}
                   </div>
 
                   <div className="min-h-[120px] flex items-center justify-center mb-6">
-                    {!isRecording ? (
+                    {!isRecording && !showTranscript && !isTranscribing ? (
                       <p className="text-sm text-muted-foreground/60 text-center">
                         Click the microphone button to start recording your
                         answer
                       </p>
-                    ) : (
+                    ) : isRecording ? (
                       <div className="w-full">
                         <motion.div className="flex items-center gap-2 justify-center">
                           {[...Array(5)].map((_, i) => (
@@ -498,31 +566,52 @@ export function Step6Question({
                           ))}
                         </motion.div>
                       </div>
-                    )}
+                    ) : isTranscribing ? (
+                      <p className="text-sm text-muted-foreground text-center">
+                        Processing your audio...
+                      </p>
+                    ) : showTranscript ? (
+                      <div className="w-full p-4 bg-muted/30 rounded-lg border border-border">
+                        <p className="text-xs text-muted-foreground mb-2">Transcript:</p>
+                        <p className="text-sm leading-relaxed">{transcript || "No speech detected"}</p>
+                      </div>
+                    ) : null}
                   </div>
 
-                  <div className="flex justify-center">
-                    <motion.button
-                      onClick={toggleRecording}
-                      disabled={isSubmitting}
-                      className={`
-    w-14 h-14 rounded-full flex items-center justify-center transition-all
-    ${
-      isRecording
-        ? "bg-destructive text-destructive-foreground"
-        : "bg-primary text-primary-foreground"
-    }
-    ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}
-  `}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {isRecording ? (
-                        <MicOff className="w-6 h-6" strokeWidth={2} />
-                      ) : (
-                        <Mic className="w-6 h-6" strokeWidth={2} />
-                      )}
-                    </motion.button>
+                  <div className="flex justify-center gap-3">
+                    {!showTranscript ? (
+                      <motion.button
+                        onClick={toggleRecording}
+                        disabled={isSubmitting || isTranscribing}
+                        className={`
+                          w-14 h-14 rounded-full flex items-center justify-center transition-all
+                          ${
+                            isRecording
+                              ? "bg-destructive text-destructive-foreground"
+                              : "bg-primary text-primary-foreground"
+                          }
+                          ${isSubmitting || isTranscribing ? "opacity-50 cursor-not-allowed" : ""}
+                        `}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {isRecording ? (
+                          <MicOff className="w-6 h-6" strokeWidth={2} />
+                        ) : (
+                          <Mic className="w-6 h-6" strokeWidth={2} />
+                        )}
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        onClick={handleRetake}
+                        disabled={isSubmitting}
+                        className="px-6 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 transition-all"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Retake Recording
+                      </motion.button>
+                    )}
                   </div>
                 </div>
               )}
@@ -530,21 +619,21 @@ export function Step6Question({
               {/* Submit Button */}
               <motion.button
                 onClick={handleSubmit}
-                disabled={!selectedAnswer || isSubmitting}
+                disabled={(!selectedAnswer && !showTranscript) || isSubmitting || isTranscribing}
                 className={`
-    w-full px-6 py-4 rounded-xl transition-all font-medium
-    ${
-      !selectedAnswer || isSubmitting
-        ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-        : "bg-primary text-primary-foreground hover:shadow-lg"
-    }
-  `}
+                  w-full px-6 py-4 rounded-xl transition-all font-medium
+                  ${
+                    (!selectedAnswer && !showTranscript) || isSubmitting || isTranscribing
+                      ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                      : "bg-primary text-primary-foreground hover:shadow-lg"
+                  }
+                `}
               >
                 {isSubmitting
                   ? "Submitting..."
                   : questionNumber === totalQuestions
                     ? "Complete Interview"
-                    : "Next Question"}
+                    : "Submit & Continue"}
               </motion.button>
             </div>
           </div>

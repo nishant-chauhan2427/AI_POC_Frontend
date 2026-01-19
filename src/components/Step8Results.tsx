@@ -33,7 +33,7 @@ interface ReportData {
   qa_log: QALogItem[];
 }
 
-export default function Step8Results({ onRestart, candidateId = "CAND-450a2b8f" }: Step8ResultsProps) {
+export function Step8Results({ onRestart, candidateId = "CAND-450a2b8f" }: Step8ResultsProps) {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
 
