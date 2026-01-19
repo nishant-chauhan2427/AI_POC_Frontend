@@ -10,6 +10,7 @@ import {
   Eye,
   Monitor,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -53,8 +54,9 @@ export function Step6Question({
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  console.log("Rendering question:", question);
+  // console.log("Rendering question:", question);
 
   /* ---------------- TIMER ---------------- */
   useEffect(() => {
@@ -140,7 +142,11 @@ export function Step6Question({
 
   /* ---------------- SUBMIT (OLD submit_answer API) ---------------- */
   const handleSubmit = async () => {
-    if (!audioBlob) return;
+    if (!audioBlob || isSubmitting) return;
+
+    setIsSubmitting(true);
+
+    const toastId = toast.loading("Submitting your answer...");
 
     try {
       const formData = new FormData();
@@ -153,7 +159,6 @@ export function Step6Question({
       formData.append("expected_answer", question.expected_answer || "");
       formData.append("session_id", localStorage.getItem("session_id") || "");
 
-      // 🎧 ATTACH REAL AUDIO FILE
       const audioFile = new File([audioBlob], `answer_${question.id}.webm`, {
         type: "audio/webm",
       });
@@ -164,16 +169,28 @@ export function Step6Question({
         body: formData,
       });
 
-      if (!res.ok) throw new Error("submit_answer failed");
+      const data = await res.json();
 
-      // ✅ Move to next only AFTER upload
+      if (!res.ok) {
+        throw new Error(data?.message || "Answer submission failed");
+      }
+
+      // ✅ SUCCESS TOAST (from API if exists)
+      toast.success(data?.message || "Answer submitted successfully", {
+        id: toastId,
+      });
+
       onAnswer({
         questionId: question.id,
         transcript: "audio-file",
         timeSpent,
       });
-    } catch (e) {
-      console.error("submit_answer failed", e);
+    } catch (err: any) {
+      console.error("submit_answer failed", err);
+
+      toast.error(err?.message || "Failed to submit answer", { id: toastId });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -487,14 +504,16 @@ export function Step6Question({
                   <div className="flex justify-center">
                     <motion.button
                       onClick={toggleRecording}
+                      disabled={isSubmitting}
                       className={`
-                        w-14 h-14 rounded-full flex items-center justify-center transition-all
-                        ${
-                          isRecording
-                            ? "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/30"
-                            : "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
-                        }
-                      `}
+    w-14 h-14 rounded-full flex items-center justify-center transition-all
+    ${
+      isRecording
+        ? "bg-destructive text-destructive-foreground"
+        : "bg-primary text-primary-foreground"
+    }
+    ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}
+  `}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >
@@ -511,21 +530,21 @@ export function Step6Question({
               {/* Submit Button */}
               <motion.button
                 onClick={handleSubmit}
-                disabled={!selectedAnswer}
+                disabled={!selectedAnswer || isSubmitting}
                 className={`
-                  w-full px-6 py-4 rounded-xl transition-all font-medium
-                  ${
-                    selectedAnswer
-                      ? "bg-primary text-primary-foreground hover:shadow-lg hover:shadow-primary/20"
-                      : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-                  }
-                `}
-                whileHover={selectedAnswer ? { scale: 1.01 } : {}}
-                whileTap={selectedAnswer ? { scale: 0.99 } : {}}
+    w-full px-6 py-4 rounded-xl transition-all font-medium
+    ${
+      !selectedAnswer || isSubmitting
+        ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+        : "bg-primary text-primary-foreground hover:shadow-lg"
+    }
+  `}
               >
-                {questionNumber === totalQuestions
-                  ? "Complete Interview"
-                  : "Next Question"}
+                {isSubmitting
+                  ? "Submitting..."
+                  : questionNumber === totalQuestions
+                    ? "Complete Interview"
+                    : "Next Question"}
               </motion.button>
             </div>
           </div>
