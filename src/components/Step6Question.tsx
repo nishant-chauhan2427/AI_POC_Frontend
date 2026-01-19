@@ -324,7 +324,7 @@ export function Step6Question({
           animate={{ opacity: 1, x: 0 }}
           className="flex-1 p-6 overflow-y-auto"
         >
-          <div className="max-w-3xl mx-auto h-full flex flex-col justify-center">
+          <div className="max-w-2xl mx-auto h-full flex flex-col justify-center">
             {/* Question Card */}
             <div className="glass-card rounded-3xl p-10 border border-border">
               {/* Question Header */}

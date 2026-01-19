@@ -72,23 +72,29 @@ export function Step4PhotoCapture({
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <div className="max-w-2xl w-full">
-        {/* HEADER */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-8"
-        >
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
-            <User className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold mb-2">Photo Verification</h1>
-          <p className="text-muted-foreground">
-            Take a clear photo of yourself
-          </p>
-        </motion.div>
+        
+        
 
         {/* MAIN CARD */}
         <div className="glass-card rounded-3xl p-8">
+          {/* HEADER */}
+
+          <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 mb-8"
+        >
+          <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
+            <User className="w-6 h-6 text-secondary" />
+          </div>
+          <div>
+              <h2 className="text-2xl">Photo Verification</h2>
+              <p className="text-muted-foreground">
+                Take a clear photo of yourself
+              </p>
+          </div>
+         
+        </motion.div>
           {/* INSTRUCTIONS */}
           <div className="mb-6 p-4 rounded-xl border bg-accent/20">
             <h3 className="flex items-center gap-2 mb-2 text-sm font-medium">

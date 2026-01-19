@@ -230,7 +230,7 @@ export function Step3AadharVerification({
       >
         <div className="glass-card rounded-3xl p-10">
           {/* Header */}
-          <div className="flex items-center gap-3 mb-8">
+          <motion.div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
               <CreditCard
                 className="w-6 h-6 text-secondary"
@@ -243,7 +243,7 @@ export function Step3AadharVerification({
                 Capture clear photos of your Aadhar card (front and back)
               </p>
             </div>
-          </div>
+          </motion.div>
 
           {/* Progress Indicator */}
           <div className="flex items-center gap-4 mb-8">

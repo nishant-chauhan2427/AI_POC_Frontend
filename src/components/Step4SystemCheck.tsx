@@ -8,6 +8,8 @@ import {
   XCircle,
   Monitor,
   AlertCircle,
+  User,
+  MonitorCheck,
 } from "lucide-react";
 
 interface Step4SystemCheckProps {
@@ -181,7 +183,23 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
       )}
 
       <div className="max-w-2xl w-full glass-card rounded-3xl p-10">
-        <h2 className="text-2xl text-center mb-8">System Check</h2>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 mb-8"
+        >
+          <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
+            <MonitorCheck className="w-6 h-6 text-secondary" />
+          </div>
+          <div>
+              <h2 className="text-2xl">System Check</h2>
+              <p className="text-muted-foreground">
+                Check and give permissions 
+              </p>
+          </div>
+         
+        </motion.div>
+        <h2 className="text-2xl text-center mb-8"></h2>
 
         {/* CAMERA PREVIEW */}
         <div className="aspect-video rounded-xl overflow-hidden border mb-6">
