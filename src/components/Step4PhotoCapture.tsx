@@ -142,7 +142,7 @@ export function Step4PhotoCapture({
                 {/* FACE GUIDE */}
                 {!capturedPhoto && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-64 h-80 rounded-[40%] border-4 border-yellow-400" />
+                    <div className="w-64 h-80 rounded-[40%] border-4 border-yellow-500" />
                   </div>
                 )}
               </div>
