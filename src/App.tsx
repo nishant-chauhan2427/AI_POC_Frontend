@@ -114,7 +114,7 @@ export default function App() {
   // ✅ ADD: holds real report summary from API
   const [reportSummary, setReportSummary] = useState(null);
 
-  const totalSteps = 10;
+  const totalSteps = 9;
   // const questions = mockQuestions.default;
   const [questions, setQuestions] = useState<QuestionData[]>([]);
 
@@ -455,8 +455,7 @@ const data = await res.json();
         )}
       </AnimatePresence>
 
-      <motion.div className="fixed w-full bottom-6 flex justify-center items-center">
-        Powered by
+      <motion.div className='fixed w-full bottom-6 flex justify-center items-center'>Powered by 
         <img
           src="/PRAGYAN.AI-logo-dark.svg"
           alt="PRAGYAN.AI Logo"

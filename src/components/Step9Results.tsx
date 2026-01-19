@@ -36,7 +36,7 @@ export function Step8Results({ onRestart }: Step8ResultsProps) {
 
   return (
     <div className="min-h-screen p-6">
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto mb-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -195,18 +195,18 @@ export function Step8Results({ onRestart }: Step8ResultsProps) {
           transition={{ delay: 1 }}
           className="flex flex-col sm:flex-row gap-4 justify-center"
         >
-          <button
+          {/* <button
             onClick={onRestart}
             className="flex items-center justify-center gap-3 px-8 py-4 rounded-xl border border-border bg-accent/30 hover:border-primary/50 hover:bg-accent/50 transition-all"
           >
             <Home className="w-5 h-5" strokeWidth={1.5} />
             <span>New Interview</span>
-          </button>
+          </button> */}
 
-          <button className="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all">
+          {/* <button className="flex items-center justify-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-xl hover:shadow-lg hover:shadow-primary/20 transition-all">
             <Download className="w-5 h-5" strokeWidth={1.5} />
             <span>Download Report</span>
-          </button>
+          </button> */}
         </motion.div>
       </div>
     </div>
