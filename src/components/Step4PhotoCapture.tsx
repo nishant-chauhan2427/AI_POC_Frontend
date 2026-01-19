@@ -131,7 +131,7 @@ export function Step4PhotoCapture({
 
                     {/* FACE GUIDE */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-64 h-80 border-2 border-dashed border-primary/50 rounded-[40%]" />
+                      <div className="w-64 h-80 border-2 border-dashed border-blue-600 border-primary/100 rounded-[40%]" />
                     </div>
                   </motion.div>
                 ) : (
