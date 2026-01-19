@@ -95,7 +95,7 @@ export function Step7Question({ questionNumber, totalQuestions, question, onAnsw
                     <Brain className="w-6 h-6 text-primary" strokeWidth={1.5} />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-3">AI INTERVIEWER</p>
+                    {/* <p className="text-xs text-muted-foreground mb-3">AI INTERVIEWER</p> */}
                     <h2 className="text-2xl leading-relaxed">{question.text}</h2>
                   </div>
                 </div>

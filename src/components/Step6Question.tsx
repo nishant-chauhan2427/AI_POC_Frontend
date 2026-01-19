@@ -225,7 +225,7 @@ export function Step6Question({
           animate={{ opacity: 1, x: 0 }}
           className="w-[35%] p-6 border-r border-border"
         >
-          <div className="h-full flex flex-col">
+          <div className="h-full ms-8 flex flex-col">
             {/* Camera Feed */}
             <div className="glass-card rounded-2xl overflow-hidden flex-1 relative border border-border">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/5">
@@ -322,7 +322,7 @@ export function Step6Question({
         <motion.div
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
-          className="flex-1 p-6 overflow-y-auto"
+          className="flex-1 w-[60%] p-6 overflow-y-auto"
         >
           <div className="max-w-2xl mx-auto h-full flex flex-col justify-center">
             {/* Question Card */}
@@ -333,9 +333,9 @@ export function Step6Question({
                   <Brain className="w-6 h-6 text-primary" strokeWidth={1.5} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-muted-foreground mb-3 tracking-wider">
-                    AI INTERVIEWER
-                  </p>
+                  {/* <p className="text-xs text-muted-foreground mb-3 tracking-wider">
+                    PRAGYAN AI
+                  </p> */}
                   <h2 className="text-2xl leading-relaxed">{question.text}</h2>
                 </div>
               </div>

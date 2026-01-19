@@ -95,7 +95,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(5);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -369,6 +369,13 @@ const handleInterviewComplete = async () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <motion.div className='fixed w-full bottom-[20px] flex justify-center  items-center'>Powered by 
+        <img
+            src="/PRAGYAN.AI-logo-dark.svg"
+            alt="PRAGYAN.AI Logo"
+            className="h-8 object-contain"/> 
+      </motion.div>
     </div>
   );
 }
