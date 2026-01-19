@@ -95,7 +95,7 @@ const mockQuestions: Record<string, QuestionData[]> = {
 };
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(6);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -286,7 +286,7 @@ const handleInterviewComplete = async () => {
   /* ---------------- RENDER ---------------- */
   return (
     <div className="min-h-screen w-full bg-background text-foreground px-4 py-4">
-      <header className="py-4 container">
+      <header className="fixed top-4 left-12">
         <motion.div className='flex justify-start  items-center'> <img
             src="/VAYUZ-logo-hd.png"
             alt="VAYUZ"
