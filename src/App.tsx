@@ -15,88 +15,38 @@ import { Step7Completion } from "./components/Step7Completion";
 import { Step8Results } from "./components/Step8Results";
 import { Step9ThankYou } from "./components/Step9ThankYou";
 import { postForm } from "./utils/api";
+import axios from "axios";
 
 /* ---------------- MOCK QUESTIONS ---------------- */
-const mockQuestions: Record<string, QuestionData[]> = {
-  "software-engineer": [
-    {
-      id: "1",
-      text: "What is your experience with React and modern frontend frameworks?",
-      type: "multiple-choice",
-      options: [
-        "Expert - 5+ years with production applications",
-        "Advanced - 2-5 years with multiple projects",
-        "Intermediate - 1-2 years with some projects",
-        "Beginner - Less than 1 year or learning",
-      ],
-    },
-    {
-      id: "2",
-      text: "Describe a challenging technical problem you solved recently and your approach to solving it.",
-      type: "open-ended",
-    },
-    {
-      id: "3",
-      text: "How do you ensure code quality in your projects?",
-      type: "multiple-choice",
-      options: [
-        "Unit tests, code reviews, and automated CI/CD",
-        "Manual testing and peer reviews",
-        "Automated testing only",
-        "Code reviews only",
-      ],
-    },
-  ],
-  "product-manager": [
-    {
-      id: "1",
-      text: "How do you prioritize features in a product roadmap?",
-      type: "multiple-choice",
-      options: [
-        "User impact, business value, and technical feasibility",
-        "Business requirements only",
-        "User requests and feedback",
-        "Technical team recommendations",
-      ],
-    },
-    {
-      id: "2",
-      text: "Describe a time when you had to make a difficult product decision with limited data.",
-      type: "open-ended",
-    },
-    {
-      id: "3",
-      text: "What metrics do you track to measure product success?",
-      type: "open-ended",
-    },
-  ],
-  default: [
-    {
-      id: "1",
-      text: "Tell us about your professional background and experience.",
-      type: "open-ended",
-    },
-    {
-      id: "2",
-      text: "What motivates you in your work?",
-      type: "multiple-choice",
-      options: [
-        "Solving challenging problems",
-        "Working with great teams",
-        "Making an impact",
-        "Learning and growth",
-      ],
-    },
-    {
-      id: "3",
-      text: "Where do you see yourself in 5 years?",
-      type: "open-ended",
-    },
-  ],
+let screenRecorder: MediaRecorder | null = null;
+let screenChunks: Blob[] = [];
+
+export const startScreenRecording = (stream: MediaStream) => {
+  screenChunks = [];
+  screenRecorder = new MediaRecorder(stream);
+
+  screenRecorder.ondataavailable = (e) => {
+    if (e.data.size > 0) screenChunks.push(e.data);
+  };
+
+  screenRecorder.start();
 };
 
+export const stopScreenRecording = (): Promise<Blob> => {
+  return new Promise((resolve) => {
+    if (!screenRecorder) return resolve(new Blob());
+
+    screenRecorder.onstop = () => {
+      resolve(new Blob(screenChunks, { type: "video/webm" }));
+    };
+
+    screenRecorder.stop();
+  });
+};
+
+
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(5);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);
@@ -280,38 +230,66 @@ const handlePhotoCapture = async (photo: string) => {
 
   // ✅ CHANGE: Fetch real report summary before Step8Results
   const handleInterviewComplete = async () => {
-    try {
-      const candidateId = localStorage.getItem("candidate_id");
+  try {
+    const candidateId = localStorage.getItem("candidate_id");
+    const candidateName =
+      localStorage.getItem("candidate_name") || initialUserData?.name;
 
-      // 🔥 REAL API CALL (same source as ReportAnalysis)
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/report/qa_logs/${candidateId}`);
-const data = await res.json();
-
-      if (data?.status_code === 200 && data?.data?.length > 0) {
-        const qaLog = data.data[0].qa_log;
-
-        const totalQuestions = qaLog.length;
-        const correct = qaLog.filter((q) => q.is_correct).length;
-        const skipped = qaLog.filter((q) => q.skipped).length;
-        const score = qaLog.reduce((s, q) => s + (q.score || 0), 0);
-
-        // ✅ Derived metrics (same math as ReportAnalysis)
-        setReportSummary({
-          totalQuestions,
-          correct,
-          skipped,
-          score,
-          accuracy: totalQuestions
-            ? Math.round((correct / totalQuestions) * 100)
-            : 0,
-        });
-
-        setCurrentStep(8); // ✅ Go to Step8Results
-      }
-    } catch (err) {
-      console.error("Failed to fetch report summary", err);
+    if (!candidateId || !candidateName) {
+      throw new Error("Candidate details missing");
     }
-  };
+
+    toast.loading("Finalizing interview…");
+
+    /* ---------- STOP + UPLOAD SCREEN RECORDING ---------- */
+    const screenBlob = await stopScreenRecording();
+
+    if (screenBlob.size > 0) {
+      const formData = new FormData();
+      formData.append("candidate_id", candidateId);
+      formData.append(
+        "recording",
+        new File([screenBlob], "screen_recording.webm", {
+          type: "video/webm",
+        }),
+      );
+
+      await axios.post(
+        `${import.meta.env.VITE_API_BASE_URL}/frames/upload_screen_recording`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+    }
+
+    /* ---------- NOW CALL RESULT API ---------- */
+    const body = new URLSearchParams();
+    body.append("candidate_id", candidateId);
+    body.append("candidate_name", candidateName);
+
+    const { data } = await axios.post(
+      `${import.meta.env.VITE_API_BASE_URL}/questions/get_result`,
+      body,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
+    );
+
+    setReportSummary(data);
+    toast.dismiss();
+    setCurrentStep(8);
+  } catch (err) {
+    console.error("Interview completion failed", err);
+    toast.error("Failed to finalize interview");
+  }
+};
+
+
 
   const handleAnswer = ({ questionId, transcript, timeSpent }) => {
     setAnswers((prev) => [
@@ -419,9 +397,15 @@ const data = await res.json();
           <motion.div key="step6">
             <Step5InterviewReady
               onNext={async () => {
-                await fetchInterviewQuestions(initialUserData?.testId);
-                setCurrentStep(7);
-              }}
+  await fetchInterviewQuestions(initialUserData?.testId);
+
+  if (screenStream) {
+    startScreenRecording(screenStream);
+  }
+
+  setCurrentStep(7);
+}}
+
             />
           </motion.div>
         )}

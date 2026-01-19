@@ -11,6 +11,8 @@ import {
   Monitor,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import axios from "axios";
+
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -58,6 +60,37 @@ export function Step6Question({
   const [transcript, setTranscript] = useState("");
   const [showTranscript, setShowTranscript] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const HEAD_POSE_INTERVAL =
+  Number(import.meta.env.VITE_HEAD_POSE_INTERVAL_MS) || 5000;
+  const violationCountRef = useRef(0);
+const lastViolationTsRef = useRef(0);
+
+
+
+  const captureFrame = (): Promise<Blob | null> => {
+  return new Promise((resolve) => {
+    if (!videoRef.current) return resolve(null);
+
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return resolve(null);
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(
+      (blob) => resolve(blob),
+      "image/jpeg",
+      0.7, // ⚖️ balance quality vs bandwidth
+    );
+  });
+};
+
+
 
   /* ---------------- TIMER ---------------- */
   useEffect(() => {
@@ -105,6 +138,56 @@ export function Step6Question({
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
+
+  useEffect(() => {
+  if (!cameraStream || !videoRef.current) return;
+
+  let intervalId: number;
+
+  const sendFrameForDetection = async () => {
+    try {
+      const frameBlob = await captureFrame();
+      if (!frameBlob) return;
+
+      const formData = new FormData();
+      formData.append("file", frameBlob, "frame.jpg");
+      formData.append(
+        "candidate_name",
+        localStorage.getItem("candidate_id") || "",
+      );
+      formData.append(
+        "session_id",
+        localStorage.getItem("session_id") || "",
+      );
+
+      const { data } = await axios.post(
+        `${API_BASE}/status/detect_head_pose`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      // 🚨 Optional: act on cheating signal
+      if (data?.cheating === true) {
+        toast.error("Suspicious head movement detected");
+      }
+    } catch (err) {
+      // ❗ Silent fail by design (do NOT interrupt interview)
+      console.warn("Head pose detection failed");
+    }
+  };
+
+  intervalId = window.setInterval(
+    sendFrameForDetection,
+    HEAD_POSE_INTERVAL,
+  );
+
+  return () => clearInterval(intervalId);
+}, [cameraStream]);
+
 
   /* ---------------- RECORDING BORDER ---------------- */
   useEffect(() => {
@@ -177,7 +260,7 @@ export function Step6Question({
       }
 
       // Show transcript to user
-      setTranscript(data?.transcript || "");
+      setTranscript(data?.user_answer || "");
       setShowTranscript(true);
       
       toast.success("Transcription completed!");
@@ -191,6 +274,53 @@ export function Step6Question({
   };
 
   /* ---------------- SUBMIT (OLD submit_answer API) ---------------- */
+  const handleSkip = async () => {
+  if (isSubmitting) return;
+
+  setIsSubmitting(true);
+  const toastId = toast.loading("Skipping question...");
+
+  try {
+    const formData = new FormData();
+    formData.append(
+      "candidate_id",
+      localStorage.getItem("candidate_id") || "",
+    );
+    formData.append("question_id", question.id);
+    formData.append("question", question.text);
+
+    const { data } = await axios.post(
+      `${API_BASE}/questions/skip_question`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      },
+    );
+
+    toast.success(data?.message || "Question skipped", {
+      id: toastId,
+    });
+
+    // 🚀 Move to next question
+    onAnswer({
+      questionId: question.id,
+      transcript: "",
+      timeSpent,
+    });
+  } catch (err: any) {
+    console.error("Skip failed", err);
+
+    toast.error(
+      err?.response?.data?.message || "Could not skip question",
+      { id: toastId },
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
   const handleSubmit = async () => {
     if (!audioBlob || isSubmitting || !showTranscript) return;
 
@@ -635,6 +765,21 @@ export function Step6Question({
                     ? "Complete Interview"
                     : "Submit & Continue"}
               </motion.button>
+
+              {/* Skip Question Button */}
+<motion.button
+  onClick={handleSkip}
+  disabled={isSubmitting || isTranscribing}
+  className="
+    w-full mt-3 px-6 py-3 rounded-xl border
+    border-border text-muted-foreground
+    hover:bg-muted/40 transition-all
+  "
+  whileHover={{ scale: 1.02 }}
+  whileTap={{ scale: 0.98 }}
+>
+  Skip Question
+</motion.button>
             </div>
           </div>
         </motion.div>
