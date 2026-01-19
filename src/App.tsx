@@ -112,13 +112,11 @@ export default function App() {
   const [screenStream, setScreenStream] = useState(null);
 
   // ✅ ADD: holds real report summary from API
-const [reportSummary, setReportSummary] = useState(null);
-
+  const [reportSummary, setReportSummary] = useState(null);
 
   const totalSteps = 9;
   // const questions = mockQuestions.default;
   const [questions, setQuestions] = useState<QuestionData[]>([]);
-
 
   /* ---------------- PARSE URL ONCE ---------------- */
   useEffect(() => {
@@ -150,74 +148,71 @@ const [reportSummary, setReportSummary] = useState(null);
   }, []);
 
   const validateEmailLink = async (email: string) => {
-  const API_BASE = import.meta.env.VITE_API_BASE_URL;
-
-  const res = await fetch(
-    `${API_BASE}/link/validate?email=${encodeURIComponent(email)}`
-  );
-
-  if (!res.ok) {
-    throw new Error("Invalid or expired link");
-  }
-
-  return res.json();
-};
-
-const fetchInterviewQuestions = async (testId: string) => {
-  try {
     const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
     const res = await fetch(
-      `${API_BASE}/testquestions/qa_test/${testId}`,
-      { headers: { accept: "application/json" } }
+      `${API_BASE}/link/validate?email=${encodeURIComponent(email)}`,
     );
 
     if (!res.ok) {
-      throw new Error("Failed to fetch questions");
+      throw new Error("Invalid or expired link");
     }
 
-    const json = await res.json();
+    return res.json();
+  };
 
-    if (json.status_code !== 200) {
-      throw new Error("Invalid question response");
+  const fetchInterviewQuestions = async (testId: string) => {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+
+      const res = await fetch(`${API_BASE}/testquestions/qa_test/${testId}`, {
+        headers: { accept: "application/json" },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch questions");
+      }
+
+      const json = await res.json();
+
+      if (json.status_code !== 200) {
+        throw new Error("Invalid question response");
+      }
+
+      // 🔁 Map API → UI format
+      const mappedQuestions = json.data.map((q: any) => ({
+        id: q.question_id,
+        text: q.question_text,
+        expected_answer: q.answers?.[0]?.answer_text,
+        type: "open-ended", // API gives reference answers, not MCQs
+      }));
+
+      setQuestions(mappedQuestions);
+    } catch (err) {
+      console.error("Question fetch failed:", err);
+      alert("Failed to load interview questions.");
     }
-
-    // 🔁 Map API → UI format
-    const mappedQuestions = json.data.map((q: any) => ({
-      id: q.question_id,
-      text: q.question_text,
-      expected_answer: q.answers?.[0]?.answer_text,
-      type: "open-ended", // API gives reference answers, not MCQs
-    }));
-
-    setQuestions(mappedQuestions);
-  } catch (err) {
-    console.error("Question fetch failed:", err);
-    alert("Failed to load interview questions.");
-  }
-};
-
+  };
 
   /* ---------------- HELPERS ---------------- */
   const handleNext = () => setCurrentStep((s) => s + 1);
-  
+
   const handleStep1Next = async () => {
-  try {
-    if (!initialUserData?.email) {
-      throw new Error("Email missing in URL");
+    try {
+      if (!initialUserData?.email) {
+        throw new Error("Email missing in URL");
+      }
+
+      // 🔥 VALIDATE EMAIL FROM URL
+      await validateEmailLink(initialUserData.email);
+
+      // ✅ Proceed only if validation succeeds
+      setCurrentStep(2);
+    } catch (err) {
+      console.error("Link validation failed:", err);
+      alert("This interview link is invalid or expired.");
     }
-
-    // 🔥 VALIDATE EMAIL FROM URL
-    await validateEmailLink(initialUserData.email);
-
-    // ✅ Proceed only if validation succeeds
-    setCurrentStep(2);
-  } catch (err) {
-    console.error("Link validation failed:", err);
-    alert("This interview link is invalid or expired.");
-  }
-};
-
+  };
 
   const handleUserDetails = (data) => {
     setUserDetails(data);
@@ -237,103 +232,95 @@ const fetchInterviewQuestions = async (testId: string) => {
   };
 
   // ✅ CHANGE: Upload candidate photo after capture
-const handlePhotoCapture = async (photo: string) => {
-  try {
-    const API_BASE = import.meta.env.VITE_API_BASE_URL;
-    // 🔹 Convert base64 → Blob
-    const blob = await fetch(photo).then((r) => r.blob());
+  const handlePhotoCapture = async (photo: string) => {
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+      // 🔹 Convert base64 → Blob
+      const blob = await fetch(photo).then((r) => r.blob());
 
-    // 🔹 Prepare form data
-    const formData = new FormData();
-    formData.append("file", blob, "candidate_photo.png");
-    formData.append(
-      "candidate_id",
-      localStorage.getItem("candidate_id") || ""
-    );
+      // 🔹 Prepare form data
+      const formData = new FormData();
+      formData.append("file", blob, "candidate_photo.png");
+      formData.append(
+        "candidate_id",
+        localStorage.getItem("candidate_id") || "",
+      );
 
-    // 🔹 REAL API CALL (replace URL if needed)
-    const response = await fetch(
-      `${API_BASE}/auth/upload-candidate-image`,
-      {
+      // 🔹 REAL API CALL (replace URL if needed)
+      const response = await fetch(`${API_BASE}/auth/upload-candidate-image`, {
         method: "POST",
         body: formData,
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error("Photo upload failed");
-    }
-
-    // 🔹 Save success flag (used later)
-    localStorage.setItem("iscandidatephoto", "true");
-
-    // 🔹 Store photo locally if needed
-    setPhotoData(photo);
-
-    // ✅ Move to NEXT STEP (System Check)
-    handleNext();
-  } catch (error) {
-    console.error("Photo upload error:", error);
-    alert("Failed to upload photo. Please retake.");
-  }
-};
-
-// ✅ CHANGE: Fetch real report summary before Step8Results
-const handleInterviewComplete = async () => {
-  try {
-    const candidateId = localStorage.getItem("candidate_id");
-
-    // 🔥 REAL API CALL (same source as ReportAnalysis)
-    const data = await getJSON(`/report/qa_logs/${candidateId}`);
-
-    if (
-      data?.status_code === 200 &&
-      data?.data?.length > 0
-    ) {
-      const qaLog = data.data[0].qa_log;
-
-      const totalQuestions = qaLog.length;
-      const correct = qaLog.filter(q => q.is_correct).length;
-      const skipped = qaLog.filter(q => q.skipped).length;
-      const score = qaLog.reduce((s, q) => s + (q.score || 0), 0);
-
-      // ✅ Derived metrics (same math as ReportAnalysis)
-      setReportSummary({
-        totalQuestions,
-        correct,
-        skipped,
-        score,
-        accuracy: totalQuestions
-          ? Math.round((correct / totalQuestions) * 100)
-          : 0,
       });
 
-      setCurrentStep(8); // ✅ Go to Step8Results
+      if (!response.ok) {
+        throw new Error("Photo upload failed");
+      }
+
+      // 🔹 Save success flag (used later)
+      localStorage.setItem("iscandidatephoto", "true");
+
+      // 🔹 Store photo locally if needed
+      setPhotoData(photo);
+
+      // ✅ Move to NEXT STEP (System Check)
+      handleNext();
+    } catch (error) {
+      console.error("Photo upload error:", error);
+      alert("Failed to upload photo. Please retake.");
     }
-  } catch (err) {
-    console.error("Failed to fetch report summary", err);
-  }
-};
+  };
 
+  // ✅ CHANGE: Fetch real report summary before Step8Results
+  const handleInterviewComplete = async () => {
+    try {
+      const candidateId = localStorage.getItem("candidate_id");
 
+      // 🔥 REAL API CALL (same source as ReportAnalysis)
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/report/qa_logs/${candidateId}`);
+const data = await res.json();
+
+      if (data?.status_code === 200 && data?.data?.length > 0) {
+        const qaLog = data.data[0].qa_log;
+
+        const totalQuestions = qaLog.length;
+        const correct = qaLog.filter((q) => q.is_correct).length;
+        const skipped = qaLog.filter((q) => q.skipped).length;
+        const score = qaLog.reduce((s, q) => s + (q.score || 0), 0);
+
+        // ✅ Derived metrics (same math as ReportAnalysis)
+        setReportSummary({
+          totalQuestions,
+          correct,
+          skipped,
+          score,
+          accuracy: totalQuestions
+            ? Math.round((correct / totalQuestions) * 100)
+            : 0,
+        });
+
+        setCurrentStep(8); // ✅ Go to Step8Results
+      }
+    } catch (err) {
+      console.error("Failed to fetch report summary", err);
+    }
+  };
 
   const handleAnswer = ({ questionId, transcript, timeSpent }) => {
-  setAnswers((prev) => [
-    ...prev,
-    {
-      questionId,
-      answer: transcript,
-      time: timeSpent,
-    },
-  ]);
+    setAnswers((prev) => [
+      ...prev,
+      {
+        questionId,
+        answer: transcript,
+        time: timeSpent,
+      },
+    ]);
 
-  if (currentQuestionIndex < questions.length - 1) {
-    setCurrentQuestionIndex((i) => i + 1);
-  } else {
-    handleNext();
-  }
-};
-
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((i) => i + 1);
+    } else {
+      handleInterviewComplete();
+    }
+  };
 
   const handleRestart = () => {
     setCurrentStep(1);
@@ -360,11 +347,14 @@ const handleInterviewComplete = async () => {
   return (
     <div className="min-h-screen w-full bg-background text-foreground px-4 py-4">
       <header className="fixed top-4 left-12">
-        <motion.div className='flex justify-start  items-center'> <img
+        <motion.div className="flex justify-start  items-center">
+          {" "}
+          <img
             src="/VAYUZ-logo-hd.png"
             alt="VAYUZ"
             className="h-8 object-contain"
-          /> </motion.div>
+          />{" "}
+        </motion.div>
       </header>
       <StepIndicator currentStep={currentStep} totalSteps={totalSteps} />
 
@@ -408,12 +398,11 @@ const handleInterviewComplete = async () => {
         {currentStep === 6 && (
           <motion.div key="step6">
             <Step5InterviewReady
-  onNext={async () => {
-    await fetchInterviewQuestions(initialUserData?.testId);
-    setCurrentStep(7);
-  }}
-/>
-
+              onNext={async () => {
+                await fetchInterviewQuestions(initialUserData?.testId);
+                setCurrentStep(7);
+              }}
+            />
           </motion.div>
         )}
 
@@ -438,7 +427,10 @@ const handleInterviewComplete = async () => {
 
         {currentStep === 9 && (
           <motion.div key="step9">
-            <Step8Results reportSummary={reportSummary} onRestart={handleRestart} />
+            <Step8Results
+              reportSummary={reportSummary}
+              onRestart={handleRestart}
+            />
           </motion.div>
         )}
 
@@ -449,11 +441,12 @@ const handleInterviewComplete = async () => {
         )}
       </AnimatePresence>
 
-      <motion.div className='fixed w-full bottom-0 py-2 flex justify-center items-center bg-[#0a0a0f82]'>Powered by 
+      <motion.div className='fixed w-full bottom-6 flex justify-center items-center'>Powered by 
         <img
-            src="/PRAGYAN.AI-logo-dark.svg"
-            alt="PRAGYAN.AI Logo"
-            className="h-8 object-contain"/> 
+          src="/PRAGYAN.AI-logo-dark.svg"
+          alt="PRAGYAN.AI Logo"
+          className="h-8 object-contain"
+        />
       </motion.div>
     </div>
   );

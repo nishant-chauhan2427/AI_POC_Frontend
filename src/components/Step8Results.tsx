@@ -1,96 +1,163 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Trophy, Brain, Target, TrendingUp, Clock, Star, Download, Home } from 'lucide-react';
+import { Trophy, Brain, Target, TrendingUp, Clock, Star, Download, Home, CheckCircle2, XCircle, SkipForward, AlertCircle } from 'lucide-react';
 
 interface Step8ResultsProps {
   onRestart: () => void;
-  reportSummary: {
-    totalQuestions: number;
-    correct: number;
-    skipped: number;
-    score: number;
-    accuracy: number;
-  };
+  candidateId?: string;
 }
 
+interface QALogItem {
+  question_id: string;
+  user_answer: string;
+  question: string;
+  expected_answer: string;
+  is_correct: boolean;
+  similarity: number;
+  scores: {
+    correctness: number;
+    relevance: number;
+    communication: number;
+    confidence: number;
+  };
+  overall_score: number;
+  answer_type: string;
+  feedback: string;
+  marked_for_review: boolean;
+  skipped: boolean;
+  edited: boolean;
+}
 
-export function Step8Results({ reportSummary, onRestart }: Step8ResultsProps) {
-  // const overallScore = 87;
+interface ReportData {
+  candidate_id: string;
+  qa_log: QALogItem[];
+}
 
-  const overallScore = reportSummary?.accuracy;
+export function Step8Results({ onRestart, candidateId = "CAND-450a2b8f" }: Step8ResultsProps) {
+  const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-const metrics = [
-  {
-    icon: Trophy,
-    label: "Overall Score",
-    value: `${overallScore}%`,
-    color: "text-primary",
-  },
-  {
-    icon: Brain,
-    label: "Correct Answers",
-    value: reportSummary?.correct,
-    color: "text-[var(--status-ready)]",
-  },
-  {
-    icon: Target,
-    label: "Total Questions",
-    value: reportSummary?.totalQuestions,
-    color: "text-secondary",
-  },
-  {
-    icon: TrendingUp,
-    label: "Total Score",
-    value: reportSummary?.score,
-    color: "text-[var(--status-processing)]",
-  },
-];
+  useEffect(() => {
+    fetchReportData();
+  }, [candidateId]);
 
-// Detailed breakdown derived from summary
-const detailedScores = [
-  {
-    category: "Accuracy",
-    score: reportSummary?.accuracy,
-    total: 100,
-  },
-  {
-    category: "Correct Answers",
-    score:
-      reportSummary?.totalQuestions > 0
-        ? Math.round(
-            (reportSummary?.correct / reportSummary?.totalQuestions) * 100
-          )
-        : 0,
-    total: 100,
-  },
-  {
-    category: "Attempt Rate",
-    score:
-      reportSummary?.totalQuestions > 0
-        ? Math.round(
-            ((reportSummary?.totalQuestions - reportSummary?.skipped) /
-              reportSummary?.totalQuestions) *
-              100
-          )
-        : 0,
-    total: 100,
-  },
-];
+  const fetchReportData = async () => {
+    try {
+      setLoading(true);
+      const API_BASE = import.meta.env.VITE_API_BASE_URL;
+      const storedCandidateId = localStorage.getItem("candidate_id") || candidateId;
+      
+      const response = await fetch(`${API_BASE}/report/qa_logs/${storedCandidateId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch report data');
+      }
 
-// Strengths derived logically
-const strengths =
-  reportSummary?.correct > reportSummary?.totalQuestions / 2
-    ? [
-        "Good accuracy across attempted questions",
-        "Consistent performance throughout the interview",
-      ]
-    : ["Shows effort in attempting questions"];
+      const data = await response.json();
 
-// Improvements derived logically
-const improvements =
-  reportSummary?.skipped > 0
-    ? ["Reduce skipped questions", "Improve time management"]
-    : ["Work on increasing overall accuracy"];
+      if (data?.status_code === 200 && data?.data?.length > 0) {
+        setReportData(data.data[0]);
+      } else {
+        throw new Error('Invalid data format');
+      }
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch report:', error);
+      setLoading(false);
+    }
+  };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading your results...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!reportData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-destructive mx-auto mb-4" />
+          <p className="text-muted-foreground">Failed to load report data</p>
+        </div>
+      </div>
+    );
+  }
+
+  const qaLog = reportData.qa_log;
+  const totalQuestions = qaLog.length;
+  const correct = qaLog.filter(q => q.is_correct).length;
+  const incorrect = qaLog.filter(q => !q.is_correct && !q.skipped).length;
+  const skipped = qaLog.filter(q => q.skipped).length;
+  const totalScore = qaLog.reduce((sum, q) => sum + q.overall_score, 0);
+  const averageScore = totalQuestions > 0 ? (totalScore / totalQuestions).toFixed(1) : 0;
+  const accuracy = totalQuestions > 0 ? Math.round((correct / totalQuestions) * 100) : 0;
+
+  const metrics = [
+    {
+      icon: Trophy,
+      label: "Overall Score",
+      value: `${averageScore}/10`,
+      color: "text-primary",
+    },
+    {
+      icon: Brain,
+      label: "Correct Answers",
+      value: correct,
+      color: "text-green-500",
+    },
+    {
+      icon: Target,
+      label: "Total Questions",
+      value: totalQuestions,
+      color: "text-secondary",
+    },
+    {
+      icon: TrendingUp,
+      label: "Accuracy",
+      value: `${accuracy}%`,
+      color: "text-blue-500",
+    },
+  ];
+
+  const detailedScores = [
+    {
+      category: "Accuracy",
+      score: accuracy,
+      total: 100,
+    },
+    {
+      category: "Average Correctness",
+      score: Math.round((qaLog.reduce((sum, q) => sum + q.scores.correctness, 0) / totalQuestions) * 10),
+      total: 100,
+    },
+    {
+      category: "Communication",
+      score: Math.round((qaLog.reduce((sum, q) => sum + q.scores.communication, 0) / totalQuestions) * 10),
+      total: 100,
+    },
+    {
+      category: "Relevance",
+      score: Math.round((qaLog.reduce((sum, q) => sum + q.scores.relevance, 0) / totalQuestions) * 10),
+      total: 100,
+    },
+  ];
+
+  const strengths = correct > 0 
+    ? ["Shows effort in attempting all questions", "Consistent engagement throughout interview"]
+    : ["Completed all questions", "Showed persistence"];
+
+  const improvements = [
+    "Focus on understanding core concepts thoroughly",
+    "Provide more detailed and structured answers",
+    "Review fundamental topics before interviews"
+  ];
 
   return (
     <div className="min-h-screen p-6">
@@ -105,7 +172,7 @@ const improvements =
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: "spring" }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6 pulse-glow"
+            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-6"
           >
             <Trophy className="w-10 h-10 text-primary" strokeWidth={1.5} />
           </motion.div>
@@ -191,7 +258,7 @@ const improvements =
               {/* Strengths */}
               <div>
                 <p className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[var(--status-ready)]" />
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
                   Key Strengths
                 </p>
                 <div className="space-y-2">
@@ -203,7 +270,7 @@ const improvements =
                       transition={{ delay: 0.6 + index * 0.1 }}
                       className="flex items-start gap-2 text-sm pl-4"
                     >
-                      <span className="text-[var(--status-ready)] mt-1">•</span>
+                      <span className="text-green-500 mt-1">•</span>
                       <span>{strength}</span>
                     </motion.div>
                   ))}
@@ -213,7 +280,7 @@ const improvements =
               {/* Improvements */}
               <div>
                 <p className="text-sm text-muted-foreground mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-[var(--status-attention)]" />
+                  <div className="w-2 h-2 rounded-full bg-orange-500" />
                   Areas for Growth
                 </p>
                 <div className="space-y-2">
@@ -225,26 +292,121 @@ const improvements =
                       transition={{ delay: 0.8 + index * 0.1 }}
                       className="flex items-start gap-2 text-sm pl-4"
                     >
-                      <span className="text-[var(--status-attention)] mt-1">•</span>
+                      <span className="text-orange-500 mt-1">•</span>
                       <span>{improvement}</span>
                     </motion.div>
                   ))}
                 </div>
               </div>
 
-              {/* Time Stats */}
-              <div className="pt-4 border-t border-border">
+              {/* Stats Summary */}
+              <div className="pt-4 border-t border-border space-y-2">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2 text-muted-foreground">
-                    <Clock className="w-4 h-4" strokeWidth={1.5} />
-                    <span>Total Time</span>
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                    <span>Correct</span>
                   </div>
-                  <span>23:45</span>
+                  <span>{correct}</span>
                 </div>
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <XCircle className="w-4 h-4 text-red-500" />
+                    <span>Incorrect</span>
+                  </div>
+                  <span>{incorrect}</span>
+                </div>
+                {skipped > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <SkipForward className="w-4 h-4 text-yellow-500" />
+                      <span>Skipped</span>
+                    </div>
+                    <span>{skipped}</span>
+                  </div>
+                )}
               </div>
             </div>
           </motion.div>
         </div>
+
+        {/* Question-wise Breakdown */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="glass-card rounded-2xl p-8 mb-8"
+        >
+          <h3 className="text-xl mb-6 flex items-center gap-2">
+            <Target className="w-5 h-5 text-primary" strokeWidth={1.5} />
+            Question-wise Performance
+          </h3>
+
+          <div className="space-y-4">
+            {qaLog.map((item, index) => (
+              <motion.div
+                key={item.question_id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 + index * 0.05 }}
+                className="border border-border rounded-xl p-4 hover:border-primary/50 transition-colors"
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
+                    item.is_correct ? 'bg-green-500/10 text-green-500' : 
+                    item.skipped ? 'bg-yellow-500/10 text-yellow-500' : 
+                    'bg-red-500/10 text-red-500'
+                  }`}>
+                    {item.is_correct ? <CheckCircle2 className="w-5 h-5" /> : 
+                     item.skipped ? <SkipForward className="w-5 h-5" /> :
+                     <XCircle className="w-5 h-5" />}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <h4 className="text-sm font-medium">Q{index + 1}: {item.question}</h4>
+                      <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        Score: {item.overall_score}/10
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="text-muted-foreground">Your Answer: </span>
+                        <span className="text-foreground">{item.user_answer}</span>
+                      </div>
+                      
+                      {item.feedback && (
+                        <div className="bg-muted/30 rounded-lg p-3 mt-2">
+                          <span className="text-muted-foreground text-xs">Feedback: </span>
+                          <span className="text-foreground text-xs">{item.feedback}</span>
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-4 mt-2">
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Correctness: </span>
+                          <span className="text-primary">{item.scores.correctness}/10</span>
+                        </div>
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Relevance: </span>
+                          <span className="text-primary">{item.scores.relevance}/10</span>
+                        </div>
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Communication: </span>
+                          <span className="text-primary">{item.scores.communication}/10</span>
+                        </div>
+                        <div className="text-xs">
+                          <span className="text-muted-foreground">Confidence: </span>
+                          <span className="text-primary">{item.scores.confidence}/10</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
 
         {/* Actions */}
         <motion.div

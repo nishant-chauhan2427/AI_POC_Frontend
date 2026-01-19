@@ -32,10 +32,85 @@ export function Step3AadharVerification({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [useFileUpload, setUseFileUpload] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAligned, setIsAligned] = useState(false);
+const [isTooSmall, setIsTooSmall] = useState(false);
+const [isTooClose, setIsTooClose] = useState(false);
+const [stillStartTime, setStillStartTime] = useState<number | null>(null);
+
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const analysisCanvasRef = useRef<HTMLCanvasElement>(null);
+
+
+
+  const analyzeFrame = () => {
+  if (!videoRef.current || !analysisCanvasRef.current) return;
+
+  const video = videoRef.current;
+  const canvas = analysisCanvasRef.current;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  // Downscale for performance
+  canvas.width = 160;
+  canvas.height = 100;
+
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+
+  let edgeCount = 0;
+  let brightnessSum = 0;
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+
+    const brightness = (r + g + b) / 3;
+    brightnessSum += brightness;
+
+    // crude edge detection
+    if (brightness < 90 || brightness > 220) {
+      edgeCount++;
+    }
+  }
+
+  const edgeRatio = edgeCount / (data.length / 4);
+
+  // 🔍 heuristics (tuned for Aadhaar-like cards)
+  const tooSmall = edgeRatio < 0.08;
+  const tooClose = edgeRatio > 0.35;
+  const aligned = !tooSmall && !tooClose;
+
+  setIsTooSmall(tooSmall);
+  setIsTooClose(tooClose);
+  setIsAligned(aligned);
+
+  // 🟢 Stillness detection
+  if (aligned) {
+    if (!stillStartTime) {
+      setStillStartTime(Date.now());
+    } else if (Date.now() - stillStartTime > 1000) {
+      capturePhoto(); // AUTO CAPTURE
+      setStillStartTime(null);
+    }
+  } else {
+    setStillStartTime(null);
+  }
+};
+
+useEffect(() => {
+  if (!isCameraActive) return;
+
+  const interval = setInterval(analyzeFrame, 300);
+
+  return () => clearInterval(interval);
+}, [isCameraActive, captureMode, frontImage, backImage]);
+
 
   // Initialize camera
   const startCamera = async () => {
@@ -224,6 +299,61 @@ export function Step3AadharVerification({
 
   const canProceed = frontImage && backImage;
 
+ function AadhaarFrameOverlay() {
+  const borderColor = isAligned
+    ? "border-green-500"
+    : isTooSmall
+    ? "border-yellow-400"
+    : isTooClose
+    ? "border-red-500"
+    : "border-secondary";
+
+  const message = isAligned
+    ? "Perfect! Hold still…"
+    : isTooSmall
+    ? "Move closer"
+    : isTooClose
+    ? "Move farther"
+    : "Align Aadhaar card inside the frame";
+
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      <div className="absolute inset-0 bg-black/40" />
+
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div
+          className={`
+            relative
+            aspect-[1.6/1]
+            w-[80%]
+            max-w-[420px]
+            border-2
+            border-dashed
+            ${borderColor}
+            rounded-xl
+            transition-colors duration-200
+          `}
+        >
+          {/* Corners */}
+          <span className={`absolute top-0 left-0 w-4 h-4 border-l-4 border-t-4 ${borderColor}`} />
+          <span className={`absolute top-0 right-0 w-4 h-4 border-r-4 border-t-4 ${borderColor}`} />
+          <span className={`absolute bottom-0 left-0 w-4 h-4 border-l-4 border-b-4 ${borderColor}`} />
+          <span className={`absolute bottom-0 right-0 w-4 h-4 border-r-4 border-b-4 ${borderColor}`} />
+
+          {/* Message */}
+          <div className="absolute bottom-2 w-full text-center">
+            <span className="text-xs bg-black/70 px-2 py-1 rounded text-white">
+              {message}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
       <motion.div
@@ -302,7 +432,7 @@ export function Step3AadharVerification({
           </div>
 
           {/* Camera Preview / Captured Images */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-6 mb-8">
             {/* Front Card */}
             <div className="space-y-4">
               <h3 className="text-sm text-muted-foreground">Front Side</h3>
@@ -332,6 +462,8 @@ export function Step3AadharVerification({
                       muted
                       className="w-full h-full object-cover"
                     />
+
+                    <AadhaarFrameOverlay />
                     {/* Scan line effect */}
                     {/* <div className="scan-line absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent opacity-50" /> */}
                   </div>
@@ -380,6 +512,7 @@ export function Step3AadharVerification({
                       muted
                       className="w-full h-full object-cover"
                     />
+                    <AadhaarFrameOverlay />
                     {/* Scan line effect */}
                     {/* <div className="scan-line absolute inset-x-0 h-0.5 bg-gradient-to-r from-transparent via-secondary to-transparent opacity-50" /> */}
                   </div>
