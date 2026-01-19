@@ -449,7 +449,7 @@ const handleInterviewComplete = async () => {
         )}
       </AnimatePresence>
 
-      <motion.div className='fixed w-full bottom-[20px] flex justify-center  items-center'>Powered by 
+      <motion.div className='fixed w-full bottom-6 flex justify-center items-center'>Powered by 
         <img
             src="/PRAGYAN.AI-logo-dark.svg"
             alt="PRAGYAN.AI Logo"
