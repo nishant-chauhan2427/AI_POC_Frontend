@@ -170,14 +170,16 @@ export function Step6Question({
         body: formData,
       });
 
-      const data = await res.json();
+      console.log(res,"stt");
 
+      const data = await res.json();
+      console.log(data,"data for the stt");
       if (!res.ok) {
         throw new Error(data?.message || "Transcription failed");
       }
 
       // Show transcript to user
-      setTranscript(data?.transcript || "");
+      setTranscript(data?.user_answer || "");
       setShowTranscript(true);
       
       toast.success("Transcription completed!");
