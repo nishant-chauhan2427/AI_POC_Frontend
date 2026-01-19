@@ -68,8 +68,71 @@ export default function App() {
   const totalSteps = 9;
   // const questions = mockQuestions.default;
   const [questions, setQuestions] = useState<QuestionData[]>([]);
+  const [fullscreenViolated, setFullscreenViolated] = useState(false);
+
+
+  const enterFullscreen = async () => {
+  const elem = document.documentElement;
+
+  if (!document.fullscreenElement) {
+    try {
+      await elem.requestFullscreen();
+    } catch (err) {
+      toast.error("Fullscreen permission is required to continue");
+      throw err;
+    }
+  }
+};
+
+
 
   /* ---------------- PARSE URL ONCE ---------------- */
+
+  useEffect(() => {
+  const handleFullscreenChange = async () => {
+    if (
+      currentStep >= 7 && // interview started
+      !document.fullscreenElement &&
+      !fullscreenViolated
+    ) {
+      setFullscreenViolated(true);
+
+      toast.error("Fullscreen exited. Interview terminated.");
+
+      alert(
+        "You exited fullscreen mode.\n\nAs per interview rules, the test has been terminated.",
+      );
+
+      try {
+        await stopScreenRecording();
+      } catch {}
+
+      // HARD STOP — end test immediately
+      setCurrentStep(10); // Thank You / End Screen
+    }
+  };
+
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+  return () =>
+    document.removeEventListener(
+      "fullscreenchange",
+      handleFullscreenChange,
+    );
+}, [currentStep, fullscreenViolated]);
+
+useEffect(() => {
+  const blockEsc = (e: KeyboardEvent) => {
+    if (e.key === "Escape" && currentStep >= 7) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+
+  document.addEventListener("keydown", blockEsc);
+  return () => document.removeEventListener("keydown", blockEsc);
+}, [currentStep]);
+
+
   useEffect(() => {
     const segments = window.location.pathname.split("/").filter(Boolean);
 
@@ -398,6 +461,7 @@ const handlePhotoCapture = async (photo: string) => {
             <Step5InterviewReady
               onNext={async () => {
   await fetchInterviewQuestions(initialUserData?.testId);
+  await enterFullscreen();
 
   if (screenStream) {
     startScreenRecording(screenStream);

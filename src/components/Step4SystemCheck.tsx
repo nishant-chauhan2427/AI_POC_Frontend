@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
   Mic,
   Video,
@@ -7,8 +7,6 @@ import {
   CheckCircle2,
   XCircle,
   Monitor,
-  AlertCircle,
-  User,
   MonitorCheck,
 } from "lucide-react";
 
@@ -28,12 +26,7 @@ interface SystemCheck {
 
 export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
   const [checks, setChecks] = useState<SystemCheck[]>([
-    {
-      id: "microphone",
-      label: "Microphone Access",
-      icon: Mic,
-      status: "pending",
-    },
+    { id: "microphone", label: "Microphone Access", icon: Mic, status: "pending" },
     { id: "camera", label: "Camera Access", icon: Video, status: "pending" },
     { id: "audio", label: "Audio Output", icon: Volume2, status: "pending" },
     {
@@ -46,26 +39,41 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
 
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
-  const [canProceed, setCanProceed] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  /* ---------------- UTIL ---------------- */
+  /* ---------------- HELPERS ---------------- */
 
   const update = (
     id: SystemCheck["id"],
     status: CheckStatus,
-    error?: string,
+    errorMessage?: string,
   ) => {
     setChecks((prev) =>
       prev.map((c) =>
-        c.id === id ? { ...c, status, errorMessage: error } : c,
+        c.id === id ? { ...c, status, errorMessage } : c,
       ),
     );
   };
 
-  /* ---------------- CHECKS ---------------- */
+  const allGranted =
+    checks.every((c) => c.status === "success") &&
+    !!cameraStream &&
+    !!screenStream;
+
+  /* ---------------- MULTI MONITOR DETECTION ---------------- */
+
+  const detectMultipleMonitors = () => {
+    const ratio = window.devicePixelRatio || 1;
+    const widthDiff =
+      window.screen.width * ratio -
+      window.screen.availWidth * ratio;
+
+    return widthDiff > 100;
+  };
+
+  /* ---------------- PERMISSION CHECKS ---------------- */
 
   const checkMicrophone = async () => {
     update("microphone", "checking");
@@ -82,10 +90,9 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
     update("camera", "checking");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: 1280, height: 720 },
+        video: { facingMode: "user" },
         audio: false,
       });
-
       setCameraStream(stream);
       update("camera", "success");
     } catch {
@@ -110,43 +117,59 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
     update("screen", "checking");
 
     try {
+      if (detectMultipleMonitors()) {
+        update(
+          "screen",
+          "failed",
+          "Multiple monitors detected. Use a single screen.",
+        );
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: { displaySurface: "monitor", cursor: "always" },
+        video: { cursor: "always" },
         audio: false,
       });
+
+      const track = stream.getVideoTracks()[0];
+      const surface = track.getSettings().displaySurface;
+
+      if (surface !== "monitor") {
+        track.stop();
+        update(
+          "screen",
+          "failed",
+          'You must share "Entire Screen" only',
+        );
+        return;
+      }
 
       setScreenStream(stream);
       setIsRecording(true);
       update("screen", "success");
 
-      // 🔥 THIS IS THE KEY LINE
-      requestAnimationFrame(() => {
-        onNext({
-          camera: cameraStream!,
-          screen: stream,
-        });
-      });
-
-      stream.getVideoTracks()[0].onended = () => {
+      /* ---- STOP IF SCREEN SHARING ENDS ---- */
+      track.onended = () => {
+        setScreenStream(null);
         setIsRecording(false);
+        update("screen", "failed", "Screen sharing stopped");
       };
     } catch {
-      update("screen", "failed", 'Please select "Entire Screen"');
+      update("screen", "failed", "Screen permission denied");
     }
   };
 
-  /* ---------------- RUN CHECKS ---------------- */
+  /* ---------------- AUTO RUN NON-SCREEN CHECKS ---------------- */
 
   useEffect(() => {
     (async () => {
       await checkMicrophone();
       await checkCamera();
       await checkAudio();
-      // await checkScreen();
     })();
   }, []);
 
-  /* ---------------- VIDEO ATTACH ---------------- */
+  /* ---------------- CAMERA PREVIEW ---------------- */
 
   useEffect(() => {
     if (cameraStream && videoRef.current) {
@@ -155,51 +178,49 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
     }
   }, [cameraStream]);
 
-  /* ---------------- PROCEED LOGIC ---------------- */
+  /* ---------------- FOCUS / BLUR ENFORCEMENT ---------------- */
 
   useEffect(() => {
-    const done = checks.every(
-      (c) => c.status === "success" || c.status === "failed",
-    );
-    if (done) setCanProceed(true);
-  }, [checks]);
+    const handleViolation = () => {
+      if (!screenStream) return;
 
-  const handleContinue = () => {
-    if (!cameraStream || !screenStream) return;
+      screenStream.getTracks().forEach((t) => t.stop());
+      setScreenStream(null);
+      setIsRecording(false);
+      update("screen", "failed", "Screen focus lost");
+    };
 
-    onNext({
-      camera: cameraStream,
-      screen: screenStream,
+    window.addEventListener("blur", handleViolation);
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) handleViolation();
     });
-  };
+
+    return () => {
+      window.removeEventListener("blur", handleViolation);
+      document.removeEventListener("visibilitychange", handleViolation);
+    };
+  }, [screenStream]);
 
   /* ---------------- UI ---------------- */
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
-      {/* 🔴 RECORDING BORDER */}
       {isRecording && (
         <div className="fixed inset-0 border-[6px] border-red-500 pointer-events-none z-50" />
       )}
 
       <div className="max-w-2xl w-full glass-card rounded-3xl p-10">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-3 mb-8"
-        >
+        <div className="flex items-center gap-3 mb-8">
           <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center">
             <MonitorCheck className="w-6 h-6 text-secondary" />
           </div>
           <div>
-              <h2 className="text-2xl">System Check</h2>
-              <p className="text-muted-foreground">
-                Check and give permissions 
-              </p>
+            <h2 className="text-2xl">System Check</h2>
+            <p className="text-muted-foreground">
+              Check and give permissions
+            </p>
           </div>
-         
-        </motion.div>
-        <h2 className="text-2xl text-center mb-8"></h2>
+        </div>
 
         {/* CAMERA PREVIEW */}
         <div className="aspect-video rounded-xl overflow-hidden border mb-6">
@@ -253,6 +274,8 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
             );
           })}
         </div>
+
+        {/* SCREEN SHARE */}
         <motion.button
           onClick={checkScreen}
           disabled={checks.find((c) => c.id === "screen")?.status === "success"}
@@ -265,17 +288,20 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
           Start Screen Sharing & Continue to Interview
         </motion.button>
 
-        {/* <motion.button
-          onClick={handleContinue}
-          disabled={!canProceed}
-          className={`w-full py-4 rounded-xl font-medium ${
-            canProceed
-              ? "bg-primary text-primary-foreground"
+        {/* FINAL CONTINUE */}
+        <motion.button
+          disabled={!allGranted}
+          onClick={() =>
+            onNext({ camera: cameraStream!, screen: screenStream! })
+          }
+          className={`w-full mt-3 py-4 rounded-xl font-medium ${
+            allGranted
+              ? "bg-green-600 text-white"
               : "bg-muted text-muted-foreground opacity-50"
           }`}
         >
           Continue to Interview
-        </motion.button> */}
+        </motion.button>
       </div>
     </div>
   );

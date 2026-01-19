@@ -172,7 +172,7 @@ const lastViolationTsRef = useRef(0);
 
       // 🚨 Optional: act on cheating signal
       if (data?.cheating === true) {
-        toast.error("Suspicious head movement detected");
+        toast.error(data?.message || "Head pose violation detected");
       }
     } catch (err) {
       // ❗ Silent fail by design (do NOT interrupt interview)
