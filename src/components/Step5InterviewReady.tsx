@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Play, Sparkles } from 'lucide-react';
+import { Play, Sparkles, ThumbsUp } from 'lucide-react';
 
 interface Step5InterviewReadyProps {
   onNext: () => void;
@@ -50,7 +50,7 @@ export function Step5InterviewReady({ onNext }: Step5InterviewReadyProps) {
             >
               {/* Icon */}
               <motion.div
-                className="w-24 h-24 mx-auto mb-8 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center relative overflow-hidden"
+                className="w-24 h-24 none mx-auto mb-8 rounded-2xl bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center relative overflow-hidden"
                 animate={{
                   boxShadow: [
                     '0 0 20px rgba(0, 212, 255, 0.2)',
@@ -64,7 +64,7 @@ export function Step5InterviewReady({ onNext }: Step5InterviewReadyProps) {
                   ease: "easeInOut",
                 }}
               >
-                <Sparkles className="w-12 h-12 text-primary" strokeWidth={1.5} />
+                <ThumbsUp className="w-12 h-12 text-secondary" strokeWidth={1.5} />
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent"
                   animate={{
@@ -85,7 +85,7 @@ export function Step5InterviewReady({ onNext }: Step5InterviewReadyProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
               >
-                Now you can start your interview
+                You’re all set to begin your interview
               </motion.h2>
 
               <motion.p
@@ -94,7 +94,7 @@ export function Step5InterviewReady({ onNext }: Step5InterviewReadyProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
               >
-                All systems are ready. Click continue when you're ready to begin your interview questions.
+                All systems are ready and functioning correctly. Click Continue to proceed with the interview questions.
               </motion.p>
 
               {/* Continue Button */}

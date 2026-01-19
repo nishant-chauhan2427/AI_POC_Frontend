@@ -44,11 +44,7 @@ export function Step1Welcome({ onNext }: Step1WelcomeProps) {
         >
           Next
         </motion.button>
-        <motion.div className='flex justify-center  items-center'>Powered by <img
-            src="/PRAGYAN.AI-logo-dark.svg"
-            alt="PRAGYAN.AI Logo"
-            className="h-8 object-contain"
-          /> </motion.div>
+        
       </motion.div>
 
 
