@@ -46,7 +46,7 @@ export const stopScreenRecording = (): Promise<Blob> => {
 
 
 export default function App() {
-  const [currentStep, setCurrentStep] = useState(5);
+  const [currentStep, setCurrentStep] = useState(8);
 
   /* ---------------- URL DATA ---------------- */
   const [initialUserData, setInitialUserData] = useState(null);

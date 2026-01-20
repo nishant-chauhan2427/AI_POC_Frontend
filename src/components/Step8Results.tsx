@@ -160,7 +160,6 @@ export function Step8Results({ onRestart }: Step8ResultsProps) {
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-6xl mx-auto pb-6">
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -173,7 +172,8 @@ export function Step8Results({ onRestart }: Step8ResultsProps) {
 
           <h1 className="text-4xl mb-2">Interview Result</h1>
           <p className="text-muted-foreground">
-            {reportData.candidate_name} · {new Date(reportData.completed_at).toLocaleString()}
+            {reportData.candidate_name} ·{" "}
+            {new Date(reportData.completed_at).toLocaleString()}
           </p>
         </motion.div>
 
@@ -201,67 +201,76 @@ export function Step8Results({ onRestart }: Step8ResultsProps) {
 
         {/* Question-wise */}
         {/* Question-wise */}
-<div className="glass-card rounded-2xl p-8">
-  <h3 className="text-xl mb-6 flex items-center gap-2">
-    <Target className="w-5 h-5 text-primary" />
-    Question-wise Performance
-  </h3>
+        <div className="glass-card rounded-2xl p-8">
+          <h3 className="text-xl mb-6 flex items-center gap-2">
+            <Target className="w-5 h-5 text-primary" />
+            Question-wise Performance
+          </h3>
 
-  <div className="space-y-4">
-    {qaLog.map((q, i) => (
-      <div
-        key={q.question_id}
-        className="border border-border rounded-xl p-4"
-      >
-        <div className="flex items-start gap-4">
-          <div
-            className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              q.is_correct
-                ? "bg-green-500/10 text-green-500"
-                : q.skipped
-                ? "bg-yellow-500/10 text-yellow-500"
-                : "bg-red-500/10 text-red-500"
-            }`}
-          >
-            {q.is_correct ? (
-              <CheckCircle2 className="w-5 h-5" />
-            ) : q.skipped ? (
-              <SkipForward className="w-5 h-5" />
-            ) : (
-              <XCircle className="w-5 h-5" />
-            )}
-          </div>
-
-          <div className="flex-1">
-            <h4 className="text-sm font-medium mb-1">
-              Q{i + 1}: {q.question}
-            </h4>
-
-            {!q.skipped && (
-              <>
-                <p className="text-sm text-muted-foreground mb-2">
-                  Your Answer: {q.user_answer || "—"}
-                </p>
-                {q.feedback && (
-                  <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg">
-                    <p className="text-xs text-red-800 font-medium mb-1">Feedback:</p>
-                    <p className="text-xs text-red-700">{q.feedback}</p>
+          <div className="space-y-4">
+            {qaLog.map((q, i) => (
+              <div
+                key={q.question_id}
+                className="border border-border rounded-xl p-4"
+              >
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                      q.is_correct
+                        ? "bg-green-500/10 text-green-500"
+                        : q.skipped
+                          ? "bg-yellow-500/10 text-yellow-500"
+                          : "bg-red-500/10 text-red-500"
+                    }`}
+                  >
+                    {q.is_correct ? (
+                      <CheckCircle2 className="w-5 h-5" />
+                    ) : q.skipped ? (
+                      <SkipForward className="w-5 h-5" />
+                    ) : (
+                      <XCircle className="w-5 h-5" />
+                    )}
                   </div>
-                )}
-              </>
-            )}
-          </div>
 
-          <div className="text-sm text-muted-foreground">
-            Score: {q.score}
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium mb-1">
+                      Q{i + 1}: {q.question}
+                    </h4>
+
+                    {!q.skipped && (
+                      <>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Your Answer: {q.user_answer || "—"}
+                        </p>
+                        {q.feedback && (
+                          <div className="mt-2 p-3 bg-red-50 border border-red-100 rounded-lg">
+                            <p className="text-xs text-red-800 font-medium mb-1">
+                              Feedback:
+                            </p>
+                            <p className="text-xs text-red-700">{q.feedback}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    Score: {q.score}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
-    ))}
-  </div>
-</div>
-
-
+        <motion.div>
+          <button
+              onClick={onRestart}
+              className="w-full py-4 rounded-xl bg-primary text-primary-foreground flex items-center justify-center gap-2"
+            >
+              {/* <Camera className="w-5 h-5" /> */}
+              Thank you and restart
+            </button>
+        </motion.div>
       </div>
     </div>
   );

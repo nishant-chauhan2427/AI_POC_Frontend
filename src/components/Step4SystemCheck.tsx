@@ -279,10 +279,10 @@ export function Step4SystemCheck({ onNext }: Step4SystemCheckProps) {
         <motion.button
           onClick={checkScreen}
           disabled={checks.find((c) => c.id === "screen")?.status === "success"}
-          className={`w-full py-4 rounded-xl font-medium ${
+          className={`w-full py-4 rounded-xl font-medium bg-primary ${
             checks.find((c) => c.id === "screen")?.status === "success"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground opacity-50"
+              ? "bg-primary text-primary-foreground bg-primary text-primary-foreground"
+              : "text-foreground "
           }`}
         >
           Start Screen Sharing & Continue to Interview

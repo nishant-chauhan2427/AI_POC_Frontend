@@ -13,7 +13,6 @@ import {
 import toast from "react-hot-toast";
 import axios from "axios";
 
-
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 interface Step6QuestionProps {
@@ -61,35 +60,54 @@ export function Step6Question({
   const [showTranscript, setShowTranscript] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const HEAD_POSE_INTERVAL =
-  Number(import.meta.env.VITE_HEAD_POSE_INTERVAL_MS) || 5000;
+    Number(import.meta.env.VITE_HEAD_POSE_INTERVAL_MS) || 5000;
   const violationCountRef = useRef(0);
-const lastViolationTsRef = useRef(0);
-
-
+  const lastViolationTsRef = useRef(0);
 
   const captureFrame = (): Promise<Blob | null> => {
-  return new Promise((resolve) => {
-    if (!videoRef.current) return resolve(null);
+    return new Promise((resolve) => {
+      if (!videoRef.current) return resolve(null);
 
-    const video = videoRef.current;
-    const canvas = document.createElement("canvas");
+      const video = videoRef.current;
+      const canvas = document.createElement("canvas");
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return resolve(null);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(null);
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob(
-      (blob) => resolve(blob),
-      "image/jpeg",
-      0.7, // ⚖️ balance quality vs bandwidth
-    );
-  });
-};
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        "image/jpeg",
+        0.7, // ⚖️ balance quality vs bandwidth
+      );
+    });
+  };
 
+  /* ---------------- RESET STATE ON QUESTION CHANGE ---------------- */
+useEffect(() => {
+  // Stop any ongoing recording
+  if (mediaRecorderRef.current && isRecording) {
+    mediaRecorderRef.current.stop();
+    mediaRecorderRef.current = null;
+  }
+
+  // Reset ALL per-question state
+  setSelectedAnswer("");
+  setTranscript("");
+  setShowTranscript(false);
+  setAudioBlob(null);
+  setIsRecording(false);
+  setIsSubmitting(false);
+  setIsTranscribing(false);
+  setTimeSpent(0);
+
+  // Clear audio chunks buffer
+  audioChunksRef.current = [];
+}, [question.id]);
 
 
   /* ---------------- TIMER ---------------- */
@@ -140,54 +158,47 @@ const lastViolationTsRef = useRef(0);
   }, []);
 
   useEffect(() => {
-  if (!cameraStream || !videoRef.current) return;
+    if (!cameraStream || !videoRef.current) return;
 
-  let intervalId: number;
+    let intervalId: number;
 
-  const sendFrameForDetection = async () => {
-    try {
-      const frameBlob = await captureFrame();
-      if (!frameBlob) return;
+    const sendFrameForDetection = async () => {
+      try {
+        const frameBlob = await captureFrame();
+        if (!frameBlob) return;
 
-      const formData = new FormData();
-      formData.append("file", frameBlob, "frame.jpg");
-      formData.append(
-        "candidate_name",
-        localStorage.getItem("candidate_id") || "",
-      );
-      formData.append(
-        "session_id",
-        localStorage.getItem("session_id") || "",
-      );
+        const formData = new FormData();
+        formData.append("file", frameBlob, "frame.jpg");
+        formData.append(
+          "candidate_name",
+          localStorage.getItem("candidate_id") || "",
+        );
+        formData.append("session_id", localStorage.getItem("session_id") || "");
 
-      const { data } = await axios.post(
-        `${API_BASE}/status/detect_head_pose`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
+        const { data } = await axios.post(
+          `${API_BASE}/status/detect_head_pose`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
           },
-        },
-      );
+        );
 
-      // 🚨 Optional: act on cheating signal
-      if (data?.cheating === true) {
-        toast.error(data?.message || "Head pose violation detected");
+        // 🚨 Optional: act on cheating signal
+        if (data?.cheating === true) {
+          toast.error(data?.message || "Head pose violation detected");
+        }
+      } catch (err) {
+        // ❗ Silent fail by design (do NOT interrupt interview)
+        console.warn("Head pose detection failed");
       }
-    } catch (err) {
-      // ❗ Silent fail by design (do NOT interrupt interview)
-      console.warn("Head pose detection failed");
-    }
-  };
+    };
 
-  intervalId = window.setInterval(
-    sendFrameForDetection,
-    HEAD_POSE_INTERVAL,
-  );
+    intervalId = window.setInterval(sendFrameForDetection, HEAD_POSE_INTERVAL);
 
-  return () => clearInterval(intervalId);
-}, [cameraStream]);
-
+    return () => clearInterval(intervalId);
+  }, [cameraStream]);
 
   /* ---------------- RECORDING BORDER ---------------- */
   useEffect(() => {
@@ -211,7 +222,7 @@ const lastViolationTsRef = useRef(0);
       setShowTranscript(false);
       setAudioBlob(null);
       setSelectedAnswer("");
-      
+
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
 
@@ -221,7 +232,7 @@ const lastViolationTsRef = useRef(0);
       recorder.onstop = async () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         setAudioBlob(blob);
-        
+
         // Call STT API immediately after recording stops
         await transcribeAudio(blob);
       };
@@ -235,14 +246,17 @@ const lastViolationTsRef = useRef(0);
   /* ---------------- STT API CALL ---------------- */
   const transcribeAudio = async (blob: Blob) => {
     setIsTranscribing(true);
-    
+
     try {
       const formData = new FormData();
-      formData.append("candidate_id", localStorage.getItem("candidate_id") || "");
+      formData.append(
+        "candidate_id",
+        localStorage.getItem("candidate_id") || "",
+      );
       formData.append("question_id", question.id);
       formData.append("question", question.text);
       formData.append("expected_answer", question.expected_answer || "");
-      
+
       const audioFile = new File([blob], `stt_${question.id}.webm`, {
         type: "audio/webm",
       });
@@ -253,10 +267,10 @@ const lastViolationTsRef = useRef(0);
         body: formData,
       });
 
-      console.log(res,"stt");
+      console.log(res, "stt");
 
       const data = await res.json();
-      console.log(data,"data for the stt");
+      console.log(data, "data for the stt");
       if (!res.ok) {
         throw new Error(data?.message || "Transcription failed");
       }
@@ -264,7 +278,7 @@ const lastViolationTsRef = useRef(0);
       // Show transcript to user
       setTranscript(data?.user_answer || "");
       setShowTranscript(true);
-      
+
       toast.success("Transcription completed!");
     } catch (err: any) {
       console.error("STT failed", err);
@@ -277,51 +291,50 @@ const lastViolationTsRef = useRef(0);
 
   /* ---------------- SUBMIT (OLD submit_answer API) ---------------- */
   const handleSkip = async () => {
-  if (isSubmitting) return;
+    if (isSubmitting) return;
 
-  setIsSubmitting(true);
-  const toastId = toast.loading("Skipping question...");
+    setIsSubmitting(true);
+    const toastId = toast.loading("Skipping question...");
 
-  try {
-    const formData = new FormData();
-    formData.append(
-      "candidate_id",
-      localStorage.getItem("candidate_id") || "",
-    );
-    formData.append("question_id", question.id);
-    formData.append("question", question.text);
+    try {
+      const formData = new FormData();
+      formData.append(
+        "candidate_id",
+        localStorage.getItem("candidate_id") || "",
+      );
+      formData.append("question_id", question.id);
+      formData.append("question", question.text);
 
-    const { data } = await axios.post(
-      `${API_BASE}/questions/skip_question`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
+      const { data } = await axios.post(
+        `${API_BASE}/questions/skip_question`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
         },
-      },
-    );
+      );
 
-    toast.success(data?.message || "Question skipped", {
-      id: toastId,
-    });
+      toast.success(data?.message || "Question skipped", {
+        id: toastId,
+      });
 
-    // 🚀 Move to next question
-    onAnswer({
-      questionId: question.id,
-      transcript: "",
-      timeSpent,
-    });
-  } catch (err: any) {
-    console.error("Skip failed", err);
+      // 🚀 Move to next question
+      onAnswer({
+        questionId: question.id,
+        transcript: "",
+        timeSpent,
+      });
+    } catch (err: any) {
+      console.error("Skip failed", err);
 
-    toast.error(
-      err?.response?.data?.message || "Could not skip question",
-      { id: toastId },
-    );
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+      toast.error(err?.response?.data?.message || "Could not skip question", {
+        id: toastId,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!audioBlob || isSubmitting || !showTranscript) return;
@@ -704,8 +717,12 @@ const lastViolationTsRef = useRef(0);
                       </p>
                     ) : showTranscript ? (
                       <div className="w-full p-4 bg-muted/30 rounded-lg border border-border">
-                        <p className="text-xs text-muted-foreground mb-2">Transcript:</p>
-                        <p className="text-sm leading-relaxed">{transcript || "No speech detected"}</p>
+                        <p className="text-xs text-muted-foreground mb-2">
+                          Transcript:
+                        </p>
+                        <p className="text-sm leading-relaxed">
+                          {transcript || "No speech detected"}
+                        </p>
                       </div>
                     ) : null}
                   </div>
@@ -751,11 +768,17 @@ const lastViolationTsRef = useRef(0);
               {/* Submit Button */}
               <motion.button
                 onClick={handleSubmit}
-                disabled={(!selectedAnswer && !showTranscript) || isSubmitting || isTranscribing}
+                disabled={
+                  (!selectedAnswer && !showTranscript) ||
+                  isSubmitting ||
+                  isTranscribing
+                }
                 className={`
                   w-full px-6 py-4 rounded-xl transition-all font-medium
                   ${
-                    (!selectedAnswer && !showTranscript) || isSubmitting || isTranscribing
+                    (!selectedAnswer && !showTranscript) ||
+                    isSubmitting ||
+                    isTranscribing
                       ? "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
                       : "bg-primary text-primary-foreground hover:shadow-lg"
                   }
@@ -769,19 +792,19 @@ const lastViolationTsRef = useRef(0);
               </motion.button>
 
               {/* Skip Question Button */}
-<motion.button
-  onClick={handleSkip}
-  disabled={isSubmitting || isTranscribing}
-  className="
+              <motion.button
+                onClick={handleSkip}
+                disabled={isSubmitting || isTranscribing}
+                className="
     w-full mt-3 px-6 py-3 rounded-xl border
     border-border text-muted-foreground
     hover:bg-muted/40 transition-all
   "
-  whileHover={{ scale: 1.02 }}
-  whileTap={{ scale: 0.98 }}
->
-  Skip Question
-</motion.button>
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                Skip Question
+              </motion.button>
             </div>
           </div>
         </motion.div>
